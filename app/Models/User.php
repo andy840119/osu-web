@@ -24,7 +24,6 @@ use App\Interfaces\Messageable;
 use App\Libraries\BBCodeForDB;
 use App\Models\Chat\PrivateMessage;
 use App\Traits\UserAvatar;
-use App\Transformers\UserTransformer;
 use Carbon\Carbon;
 use DB;
 use Exception;
@@ -51,6 +50,13 @@ class User extends Model implements AuthenticatableContract, Messageable
     protected $casts = [
         'osu_subscriber' => 'boolean',
         'user_timezone', 'float',
+    ];
+
+    const PLAYSTYLES = [
+        'mouse' => 1,
+        'keyboard' => 2,
+        'tablet' => 4,
+        'touch' => 8,
     ];
 
     public $flags;
@@ -247,6 +253,29 @@ class User extends Model implements AuthenticatableContract, Messageable
         $this->attributes['user_sig_bbcode_uid'] = $bbcode->uid;
     }
 
+    public function setUserWebsiteAttribute($value)
+    {
+        $value = trim($value);
+        if (!starts_with($value, ['http://', 'https://'])) {
+            $value = "https://{$value}";
+        }
+
+        $this->attributes['user_website'] = $value;
+    }
+
+    public function setOsuPlaystyleAttribute($value)
+    {
+        $styles = 0;
+
+        foreach (self::PLAYSTYLES as $type => $bit) {
+            if (in_array($type, $value, true)) {
+                $styles += $bit;
+            }
+        }
+
+        $this->attributes['osu_playstyle'] = $styles;
+    }
+
     public function isSpecial()
     {
         return $this->user_id !== null && present($this->user_colour);
@@ -295,14 +324,7 @@ class User extends Model implements AuthenticatableContract, Messageable
 
         $styles = [];
 
-        $mappings = [
-            'mouse' => 1,
-            'keyboard' => 2,
-            'tablet' => 4,
-            'touch' => 8,
-        ];
-
-        foreach ($mappings as $type => $bit) {
+        foreach (self::PLAYSTYLES as $type => $bit) {
             if (($value & $bit) !== 0) {
                 $styles[] = $type;
             }
@@ -396,6 +418,11 @@ class User extends Model implements AuthenticatableContract, Messageable
     public function isSupporter()
     {
         return $this->osu_subscriber === true;
+    }
+
+    public function isActive()
+    {
+        return $this->user_lastvisit > Carbon::now()->subMonth();
     }
 
     public function isPrivileged()
@@ -753,6 +780,11 @@ class User extends Model implements AuthenticatableContract, Messageable
         return $this->hasMany(Forum\Post::class, 'poster_id');
     }
 
+    public function changelogs()
+    {
+        return $this->hasMany(Changelog::class, 'user_id');
+    }
+
     public function getPlaymodeAttribute($value)
     {
         return Beatmap::modeStr($this->osu_playmode);
@@ -832,11 +864,7 @@ class User extends Model implements AuthenticatableContract, Messageable
 
     public function defaultJson()
     {
-        return json_item(
-            $this,
-            new UserTransformer(),
-            'userAchievements,defaultStatistics,disqus_auth'
-        );
+        return json_item($this, 'User', 'disqus_auth');
     }
 
     public function supportLength()

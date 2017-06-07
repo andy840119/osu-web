@@ -17,10 +17,10 @@
 --}}
 <footer class="footer no-print">
     <div class="footer__row">
-        <a class="footer__link" href="{{ osu_url('legal.tos') }}" target="_blank">Terms of Service</a>
-        <a class="footer__link" href="{{ osu_url('legal.dmca') }}" target="_blank">Copyright (DMCA)</a>
-        <a class="footer__link" href="{{ osu_url('status.server') }}" target="_blank">Server Status</a>
-        <a class="footer__link" href="{{ osu_url('status.osustatus') }}" target="_blank">@osustatus</a>
+        <a class="footer__link" href="{{ route('legal', 'terms') }}">{{ trans('layout.footer.legal.tos') }}</a>
+        <a class="footer__link" href="{{ route('legal', 'copyright') }}">{{ trans('layout.footer.legal.copyright') }}</a>
+        <a class="footer__link" href="{{ osu_url('status.server') }}">{{ trans('layout.footer.legal.serverStatus') }}</a>
+        <a class="footer__link" href="{{ osu_url('status.osustatus') }}">{{ trans('layout.footer.legal.osuStatus') }}</a>
     </div>
     <div class="footer__row">ppy powered 2007-{{ date('Y') }}</div>
 
