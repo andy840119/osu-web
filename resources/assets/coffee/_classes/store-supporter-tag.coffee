@@ -49,9 +49,12 @@ class @StoreSupporterTag
     @updateCostDisplay()
 
   initializeSlider: =>
+    # remove leftover from previous initialization
+    $(@slider).find('.ui-slider-range').remove()
+
     $(@slider).slider
       range: 'min'
-      value: @sliderValue(@MIN_VALUE)
+      value: @slider.dataset.lastValue ? @sliderValue(@MIN_VALUE)
       min: @sliderValue(@MIN_VALUE)
       max: @sliderValue(@MAX_VALUE)
       step: 1
@@ -90,6 +93,7 @@ class @StoreSupporterTag
     new StoreSupporterTagPrice(Math.floor(position / @RESOLUTION))
 
   onSliderValueChanged: (event, ui) =>
+    @slider.dataset.lastValue = ui.value
     @cost = @calculate(ui.value)
     @updateCostDisplay()
 
@@ -120,7 +124,7 @@ class @StoreSupporterTag
 
     @inputFeedback.textContent = text
     # Avoid setting value to undefined
-    @el.querySelector('input[name="item[extra_data][target_id]"').value = @user?.userId ? null
+    @el.querySelector('input[name="item[extra_data][target_id]"]').value = @user?.userId ? null
     $(@el.querySelectorAll('.js-avatar')).css
       'background-image': "url(#{avatarUrl})"
 
@@ -128,7 +132,6 @@ class @StoreSupporterTag
 
   updateCostDisplay: =>
     @el.querySelector('input[name="item[cost]"]').value = @cost.price()
-    @el.querySelector('input[name="item[extra_data][duration]"]').value = @cost.duration()
     @priceElement.textContent = "USD #{@cost.price()}"
     @durationElement.textContent = @cost.durationText()
     @discountElement.textContent = @cost.discountText()

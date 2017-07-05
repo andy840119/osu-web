@@ -35,6 +35,7 @@ return [
             'news-index' => 'news',
             'news-show' => 'news',
             'password-reset-index' => 'reset password',
+            'search' => 'Search',
             'supportTheGame' => 'support the game',
         ],
         'help' => [
@@ -247,5 +248,6 @@ return [
 
     'popup_search' => [
         'initial' => 'Type to search!',
+        'retry' => 'Search failed. Click to retry.',
     ],
 ];

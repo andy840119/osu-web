@@ -31,23 +31,29 @@ function array_search_null($value, $array)
     }
 }
 
-function background_image($url)
+function background_image($url, $proxy = true)
 {
     if (!present($url)) {
         return '';
     }
 
-    return sprintf(' style="background-image:url(\'%s\');" ', e(proxy_image($url)));
+    $url = $proxy ? proxy_image($url) : $url;
+
+    return sprintf(' style="background-image:url(\'%s\');" ', e($url));
 }
 
 function es_query_and_words($words)
 {
-    $parts = preg_split("/\s+/", trim($words ?? ''));
+    $parts = preg_split("/\s+/", $words, null, PREG_SPLIT_NO_EMPTY);
+
+    if (empty($parts)) {
+        return;
+    }
 
     $partsEscaped = [];
 
     foreach ($parts as $part) {
-        $partsEscaped[] = urlencode($part);
+        $partsEscaped[] = str_replace('-', '%2D', urlencode(strtolower($part)));
     }
 
     return implode(' AND ', $partsEscaped);
@@ -71,6 +77,23 @@ function get_valid_locale($requestedLocale)
         },
         config('app.fallback_locale')
     );
+}
+
+function html_excerpt($body, $limit = 300)
+{
+    // not using strip_tags because <br> and <p> needs to be converted to space
+    $body = preg_replace('#<[^>]+>#', ' ', $body);
+
+    if (strlen($body) < $limit) {
+        return $body;
+    }
+
+    return substr($body, 0, $limit).'...';
+}
+
+function json_date($date)
+{
+    return json_time($date->startOfDay());
 }
 
 function json_time($time)
@@ -108,6 +131,15 @@ function osu_url($key)
     }
 
     return $url;
+}
+
+function param_string_simple($value)
+{
+    if (is_array($value)) {
+        $value = implode(',', $value);
+    }
+
+    return presence($value);
 }
 
 function product_quantity_options($product)
@@ -156,6 +188,14 @@ function render_to_string($view, $variables = [])
     return view()->make($view, $variables)->render();
 }
 
+function search_total_display($total)
+{
+    if ($total >= 100) {
+        return '99+';
+    }
+
+    return (string) $total;
+}
 function obscure_email($email)
 {
     $email = explode('@', $email);
@@ -225,9 +265,13 @@ function js_view($view, $vars = [])
 
 function ujs_redirect($url)
 {
-    if (Request::ajax()) {
+    if (Request::ajax() && !Request::isMethod('get')) {
         return js_view('layout.ujs-redirect', ['url' => $url]);
     } else {
+        if (Request::header('Turbolinks-Referrer')) {
+            Request::session()->put('_turbolinks_location', $url);
+        }
+
         return redirect($url);
     }
 }
@@ -309,6 +353,15 @@ function bbcode_for_editor($text, $uid)
 
 function proxy_image($url)
 {
+    // turn relative urls into absolute urls
+    if (!preg_match('/^https?\:\/\//', $url)) {
+        // ensure url is relative to the site root
+        if ($url[0] !== '/') {
+            $url = "/{$url}";
+        }
+        $url = config('app.url').$url;
+    }
+
     $decoded = urldecode(html_entity_decode($url));
 
     if (config('osu.camo.key') === '') {
@@ -448,12 +501,14 @@ function display_regdate($user)
         return;
     }
 
+    $formattedDate = $user->user_regdate->formatLocalized('%B %Y');
+
     if ($user->user_regdate < Carbon\Carbon::createFromDate(2008, 1, 1)) {
-        return trans('users.show.first_members');
+        return "<div title='{$formattedDate}'>".trans('users.show.first_members').'</div>';
     }
 
     return trans('users.show.joined_at', [
-        'date' => '<strong>'.$user->user_regdate->formatLocalized('%B %Y').'</strong>',
+        'date' => "<strong>{$formattedDate}</strong>",
     ]);
 }
 
@@ -801,27 +856,6 @@ function first_paragraph($html, $split_on = "\n")
     $match_pos = strpos($text, $split_on);
 
     return ($match_pos === false) ? $text : substr($text, 0, $match_pos);
-}
-
-function find_images($html)
-{
-    // regex based on answer in http://stackoverflow.com/questions/12933528/regular-expression-pattern-to-match-image-url-from-text
-    $regex = "/(?:https?\:\/\/[a-zA-Z](?:[\w\-]+\.)+(?:[\w]{2,5}))(?:\:[\d]{1,6})?\/(?:[^\s\/]+\/)*(?:[^\s]+\.(?:jpe?g|gif|png))(?:\?\w?(?:=\w)?(?:&\w?(?:=\w)?)*)?/";
-    $matches = [];
-    preg_match_all($regex, $html, $matches);
-
-    return $matches[0];
-}
-
-function find_first_image($html)
-{
-    $post_images = find_images($html);
-
-    if (!is_array($post_images) || count($post_images) < 1) {
-        return;
-    }
-
-    return $post_images[0];
 }
 
 function build_icon($prefix)

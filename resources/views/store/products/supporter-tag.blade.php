@@ -35,7 +35,6 @@
     <input type="hidden" name="item[quantity]" class="js-store-item-quantity" value="1" />
     <input type="hidden" id="supporter-tag-form-price" name="item[cost]" value="4" />
     <input type="hidden" name="item[extra_data][target_id]" value="{{ Auth::user()->user_id }}" />
-    <input type="hidden" name="item[extra_data][duration]" value="1" />
     <div class="store-supporter-tag__user-icon">
         <div style="background-image: url('{{ Auth::user()->user_avatar }}');" class="avatar avatar--centered js-avatar"></div>
     </div>
@@ -50,10 +49,12 @@
     <div class="store-slider">
         <div class="js-slider ui-slider ui-slider-horizontal">
             <div class="ui-slider-handle">
-                <div class="store-slider__callout">
-                    <div class="js-price store-slider__bigtext"></div>
-                    <div class="js-duration"></div>
-                    <div class="js-discount store-slider__subtext"></div>
+                <div class="store-slider__fake-callout">
+                    <div class="store-slider__callout">
+                        <div class="js-price store-slider__bigtext"></div>
+                        <div class="js-duration"></div>
+                        <div class="js-discount store-slider__subtext"></div>
+                    </div>
                 </div>
             </div>
         </div>
