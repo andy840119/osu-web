@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -20,7 +20,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Country;
+use App\Http\Controllers\Store\Controller as Controller;
 use App\Models\Store;
 use Auth;
 use Request;
@@ -38,115 +38,54 @@ class StoreController extends Controller
     {
         $this->middleware('auth', ['only' => [
             'getInvoice',
-            'postUpdateCart',
-            'postAddToCart',
-            'postCheckout',
             'postNewAddress',
             'postUpdateAddress',
-            'postUpdateCart',
         ]]);
 
-        $this->middleware('check-user-restricted', ['only' => [
-            'getInvoice',
-            'postUpdateCart',
-            'postAddToCart',
-            'postCheckout',
-            'postNewAddress',
-            'postUpdateAddress',
-            'postUpdateCart',
-        ]]);
+        if (!$this->isAllowRestrictedUsers()) {
+            $this->middleware('check-user-restricted', ['only' => [
+                'getInvoice',
+                'postNewAddress',
+                'postUpdateAddress',
+            ]]);
+        }
 
         $this->middleware('verify-user', ['only' => [
             'getInvoice',
-            'getCheckout',
-            'postCheckout',
             'postUpdateAddress',
         ]]);
 
         return parent::__construct();
     }
 
-    // GET /store
-
-    public function getIndex()
-    {
-        return ujs_redirect('/store/listing');
-    }
-
     public function getListing()
     {
-        return view('store.index')
-            ->with('cart', $this->userCart())
-            ->with('products', Store\Product::latest()->simplePaginate(30));
+        return ext_view('store.index', [
+            'cart' => $this->userCart(),
+            'products' => Store\Product::listing()->get(),
+        ]);
     }
 
     public function getInvoice($id = null)
     {
-        $order = Store\Order::findOrFail($id);
-        if ($order->shipping === null) {
-            $order->refreshCost(true);
-        }
+        $order = Store\Order::whereHasInvoice()
+            ->with('items.product')
+            ->findOrFail($id);
 
         if (Auth::user()->user_id !== $order->user_id && !Auth::user()->isAdmin()) {
             abort(403);
         }
 
         $sentViaAddress = Store\Address::sender();
+        $forShipping = Auth::user()->isAdmin() && get_bool(Request::input('for_shipping'));
+        $copies = clamp(get_int(request('copies')), 1, config('store.invoice.max_copies'));
 
-        return view('store.invoice')
-            ->with('order', $order)
-            ->with('copies', Request::input('copies', 1))
-            ->with('sentViaAddress', $sentViaAddress);
-    }
-
-    public function getProduct($id = null)
-    {
-        $cart = $this->userCart();
-        $product = Store\Product::with('masterProduct')->findOrFail($id);
-        $requestedNotification = Auth::check() ?
-            $product->notificationRequests()->where('user_id', Auth::user()->user_id)->exists() : false;
-
-        if (!$product->enabled) {
-            abort(404);
-        }
-
-        return view('store.product', compact('cart', 'product', 'requestedNotification'));
-    }
-
-    public function getCart($id = null)
-    {
-        return view('store.cart')
-            ->with('order', $this->userCart());
-    }
-
-    public function getCheckout()
-    {
-        $order = $this->userCart();
-        if (!$order->items()->exists()) {
-            return ujs_redirect('/store/cart');
-        }
-
-        $addresses = Auth::user()->storeAddresses()->with('country')->get();
-
-        $delayedShipping = Store\Order::where('orders.status', 'paid')->count() > config('osu.store.delayed_shipping_order_threshold');
-
-        return view('store.checkout', compact('order', 'addresses', 'delayedShipping'));
+        return ext_view('store.invoice', compact('order', 'forShipping', 'copies', 'sentViaAddress'));
     }
 
     public function missingMethod($parameters = [])
     {
         abort(404);
-    }
-
-    public function postUpdateCart()
-    {
-        $result = $this->userCart()->updateItem(Request::input('item', []));
-
-        if ($result[0]) {
-            return js_view('layout.ujs-reload');
-        } else {
-            return error_popup($result[1]);
-        }
     }
 
     public function postUpdateAddress()
@@ -165,7 +104,7 @@ class StoreController extends Controller
                 $order->address()->associate($address);
                 $order->save();
 
-                return js_view('layout.ujs-reload');
+                return ext_view('layout.ujs-reload', [], 'js');
                 break;
             case 'remove':
                 if ($order->address_id === $address_id) {
@@ -178,7 +117,7 @@ class StoreController extends Controller
 
                 Store\Address::destroy($address_id);
 
-                return js_view('store.address-destroy', ['address_id' => $address_id]);
+                return ext_view('store.address-destroy', ['address_id' => $address_id], 'js');
                 break;
         }
     }
@@ -191,7 +130,16 @@ class StoreController extends Controller
             'address' => Request::input('address'),
         ]));
 
-        $addressInput = Request::all()['address'];
+        $addressInput = get_params(request(), 'address', [
+            'first_name',
+            'last_name',
+            'street',
+            'city',
+            'state',
+            'zip',
+            'country_code',
+            'phone',
+        ]);
 
         $validator = Validator::make($addressInput, [
             'first_name' => ['required'],
@@ -218,45 +166,6 @@ class StoreController extends Controller
         $order->address()->associate($address);
         $order->save();
 
-        return js_view('layout.ujs-reload');
-    }
-
-    public function postAddToCart()
-    {
-        $result = $this->userCart()->updateItem(Request::input('item', []), true);
-
-        if ($result[0]) {
-            return ujs_redirect('/store/cart');
-        } else {
-            return error_popup($result[1]);
-        }
-    }
-
-    public function postCheckout()
-    {
-        $order = $this->userCart();
-
-        if ($order->items()->count() === 0) {
-            return error_popup('cart is empty');
-        }
-
-        $order->checkout();
-
-        if ((float) $order->getTotal() === 0.0 && Request::input('completed')) {
-            file_get_contents("https://osu.ppy.sh/web/ipn.php?mc_gross=0&item_number=store-{$order->user_id}-{$order->order_id}");
-
-            return ujs_redirect(action('StoreController@getInvoice', [$order->order_id]).'?thanks=1');
-        }
-
-        return js_view('store.order-create');
-    }
-
-    private function userCart()
-    {
-        if (Auth::check()) {
-            return Store\Order::cart(Auth::user());
-        } else {
-            return new Store\Order();
-        }
+        return ext_view('layout.ujs-reload', [], 'js');
     }
 }

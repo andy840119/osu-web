@@ -1,5 +1,5 @@
 ###
-#    Copyright 2015-2017 ppy Pty. Ltd.
+#    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 #
 #    This file is part of osu!web. osu!web is distributed with the hope of
 #    attracting more community contributions to the core ecosystem of osu!.
@@ -16,70 +16,102 @@
 #    along with osu!web.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
-{div, h2, h3} = React.DOM
+import { AchievementBadge } from './achievement-badge'
+import { ExtraHeader } from './extra-header'
+import * as React from 'react'
+import { div, h2, h3 } from 'react-dom-factories'
 el = React.createElement
 
-ProfilePage.Medals = React.createClass
-  mixins: [React.addons.PureRenderMixin]
+export class Medals extends React.PureComponent
+  render: =>
+    @userAchievements = null
+
+    all =
+        for own grouping, groupedAchievements of @groupedAchievements()
+          div
+            key: grouping
+            className: 'medals-group__group'
+            h3 className: 'medals-group__title', grouping
+            for own ordering, achievements of @orderedAchievements(groupedAchievements)
+                div
+                  key: ordering
+                  className: 'medals-group__medals'
+                  achievements.map @medal
+
+    recentAchievements = @recentAchievements()
+
+    div
+      className: 'page-extra'
+      el ExtraHeader, name: @props.name, withEdit: @props.withEdit
+
+      if recentAchievements.length > 0
+        div className: 'page-extra__recent-medals-box',
+          div className: 'title title--page-extra-small',
+            osu.trans('users.show.extra.medals.recent')
+          div className: 'page-extra__recent-medals',
+            for achievement in recentAchievements
+              div
+                className: 'page-extra__recent-medal'
+                key: achievement.achievement_id
+                el AchievementBadge,
+                  achievement: @props.achievements[achievement.achievement_id]
+                  userAchievement: achievement
+                  modifiers: ['dynamic-height']
+
+      div className: 'medals-group',
+        all
+      if all.length == 0
+        osu.trans('users.show.extra.medals.empty')
 
 
-  componentWillReceiveProps: ->
-    @_userAchievements = null
+  currentModeFilter: (achievement) =>
+    !achievement.mode? || achievement.mode == @props.currentMode
 
 
-  _userAchievement: (id) ->
-    @_userAchievements ?= _.keyBy @props.userAchievements, 'achievement_id'
-
-    @_userAchievements[id]
-
-
-  _groupedAchievements: ->
+  groupedAchievements: =>
     isCurrentUser = currentUser.id == @props.user.id
 
     _.chain(@props.achievements)
       .values()
+      .filter @currentModeFilter
       .filter (a) =>
-        isCurrentMode = !a.mode? || a.mode == @props.currentMode
-        isAchieved = @_userAchievement a.id
+        isAchieved = @userAchievement a.id
 
-        isCurrentMode && (isAchieved || isCurrentUser)
+        isAchieved || isCurrentUser
       .groupBy (a) =>
         a.grouping
       .value()
 
 
-  _orderedAchievements: (achievements) ->
-      _.groupBy achievements, (achievement) =>
-        achievement.ordering
-
-
-  _medal: (achievement, i) ->
+  medal: (achievement) =>
     div
-      key: i
+      key: achievement.id
       className: 'medals-group__medal'
-      el ProfilePage.AchievementBadge,
-        additionalClasses: 'badge-achievement--listing'
+      el AchievementBadge,
+        modifiers: ['listing']
         achievement: achievement
-        userAchievement: @_userAchievement achievement.id
+        userAchievement: @userAchievement achievement.id
 
 
-  render: ->
-    all =
-        for own grouping, groupedAchievements of @_groupedAchievements()
-          div
-            key: grouping
-            className: 'medals-group__group'
-            h3 className: 'medals-group__title', grouping
-            for own ordering, achievements of @_orderedAchievements(groupedAchievements)
-                div
-                  key: ordering
-                  className: 'medals-group__medals'
-                  achievements.map @_medal
+  orderedAchievements: (achievements) =>
+    _.groupBy achievements, (achievement) =>
+      achievement.ordering
 
-    div
-      className: 'page-extra'
-      el ProfilePage.ExtraHeader, name: @props.name, withEdit: @props.withEdit
-      div className: 'medals-group',
-        all
-      if all.length == 0
-        osu.trans('users.show.extra.medals.empty')
+
+  recentAchievements: =>
+    ret = []
+
+    for ua in @props.userAchievements
+      achievement = @props.achievements[ua.achievement_id]
+
+      ret.push(ua) if @currentModeFilter(achievement)
+
+      break if ret.length >= 8
+
+    ret
+
+
+  userAchievement: (id) =>
+    @userAchievements ?= _.keyBy @props.userAchievements, 'achievement_id'
+
+    @userAchievements[id]

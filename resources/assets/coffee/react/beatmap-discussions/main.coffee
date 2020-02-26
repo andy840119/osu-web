@@ -1,5 +1,5 @@
 ###
-#    Copyright 2015-2017 ppy Pty. Ltd.
+#    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 #
 #    This file is part of osu!web. osu!web is distributed with the hope of
 #    attracting more community contributions to the core ecosystem of osu!.
@@ -16,113 +16,186 @@
 #    along with osu!web.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
-{a, div, h1, p} = React.DOM
+import { Discussions } from './discussions'
+import { Events } from './events'
+import { Header } from './header'
+import { ModeSwitcher } from './mode-switcher'
+import { NewDiscussion } from './new-discussion'
+import { BackToTop } from 'back-to-top'
+import * as React from 'react'
+import { div } from 'react-dom-factories'
+import { DiscussionsContext } from 'beatmap-discussions/discussions-context'
+import { BeatmapsContext } from 'beatmap-discussions/beatmaps-context'
+
 el = React.createElement
 
-modeSwitcher = document.getElementsByClassName('js-mode-switcher')
+export class Main extends React.PureComponent
+  constructor: (props) ->
+    super props
 
-BeatmapDiscussions.Main = React.createClass
-  mixins: [React.addons.PureRenderMixin]
+    @modeSwitcherRef = React.createRef()
+    @newDiscussionRef = React.createRef()
 
-
-  getInitialState: ->
-    beatmaps = BeatmapHelper.group @props.initial.beatmapset.beatmaps
-
-    beatmapset: @props.initial.beatmapset
-    beatmaps: beatmaps
-    beatmapsetDiscussion: @props.initial.beatmapsetDiscussion
-    currentBeatmap: BeatmapHelper.default(group: beatmaps)
-    currentUser: currentUser
-    userPermissions: @props.initial.userPermissions
-    mode: 'timeline'
-    readPostIds: _.chain(@props.initial.beatmapsetDiscussion.beatmap_discussions)
-      .map (d) =>
-        d.beatmap_discussion_posts?.map (r) =>
-          r.id
-      .flatten()
-      .value()
-    currentFilter: 'total'
-
-
-  componentWillMount: ->
     @checkNewTimeoutDefault = 10000
     @checkNewTimeoutMax = 60000
     @cache = {}
+    @timeouts = {}
+    @xhr = {}
+    @state = JSON.parse(props.container.dataset.beatmapsetDiscussionState ? null)
+    @restoredState = @state?
+    # FIXME: update url handler to recognize this instead
+    @focusNewDiscussion = document.location.hash == '#new'
+
+    if !@restoredState
+      beatmapset = props.initial.beatmapset
+      reviewsEnabled = props.initial.reviews_enabled ? false
+      showDeleted = true
+      readPostIds = []
+
+      for discussion in beatmapset.discussions
+        for post in discussion.posts ? []
+          readPostIds.push post.id
+
+      @state = {beatmapset, currentUser, readPostIds, reviewsEnabled, showDeleted}
+
+    # Current url takes priority over saved state.
+    query = @queryFromLocation(@state.beatmapset.discussions)
+    @state.currentMode = query.mode
+    @state.currentFilter = query.filter
+    @state.currentBeatmapId = query.beatmapId if query.beatmapId?
+    @state.selectedUserId = query.user
 
 
-  componentDidMount: ->
-    $.subscribe 'beatmap:select.beatmapDiscussions', @setCurrentBeatmapId
+  componentDidMount: =>
     $.subscribe 'playmode:set.beatmapDiscussions', @setCurrentPlaymode
-    $.subscribe 'beatmapsetDiscussion:update.beatmapDiscussions', @setBeatmapsetDiscussion
-    $.subscribe 'beatmapset:update.beatmapDiscussions', @setBeatmapset
+
+    $.subscribe 'beatmapsetDiscussions:update.beatmapDiscussions', @update
     $.subscribe 'beatmapDiscussion:jump.beatmapDiscussions', @jumpTo
-    $.subscribe 'beatmapDiscussion:setMode.beatmapDiscussions', @setMode
     $.subscribe 'beatmapDiscussionPost:markRead.beatmapDiscussions', @markPostRead
-    $.subscribe 'beatmapDiscussion:filter.beatmapDiscussions', @setFilter
+    $.subscribe 'beatmapDiscussionPost:toggleShowDeleted.beatmapDiscussions', @toggleShowDeleted
+
     $(document).on 'ajax:success.beatmapDiscussions', '.js-beatmapset-discussion-update', @ujsDiscussionUpdate
+    $(document).on 'click.beatmapDiscussions', '.js-beatmap-discussion--jump', @jumpToClick
+    $(document).on 'turbolinks:before-cache.beatmapDiscussions', @saveStateToContainer
 
-    @jumpByHash()
-    @checkNewTimeout = Timeout.set @checkNewTimeoutDefault, @checkNew
+    @jumpToDiscussionByHash() if !@restoredState
+    @timeouts.checkNew = Timeout.set @checkNewTimeoutDefault, @checkNew
 
 
-  componentWillUpdate: ->
+  componentWillUpdate: =>
     @cache = {}
+    @focusNewDiscussion = false
 
 
-  componentWillUnmount: ->
+  componentDidUpdate: (_prevProps, prevState) =>
+    return if prevState.currentBeatmapId == @state.currentBeatmapId &&
+      prevState.currentFilter == @state.currentFilter &&
+      prevState.currentMode == @state.currentMode &&
+      prevState.selectedUserId == @state.selectedUserId &&
+      prevState.showDeleted == @state.showDeleted
+
+    Turbolinks.controller.advanceHistory @urlFromState()
+
+
+  componentWillUnmount: =>
     $.unsubscribe '.beatmapDiscussions'
     $(document).off '.beatmapDiscussions'
 
-    Timeout.clear @checkNewTimeout
-    @checkNewAjax?.abort()
+    Timeout.clear(timeout) for _name, timeout of @timeouts
+    xhr?.abort() for _name, xhr of @xhr
 
 
-  render: ->
-    div null,
-      el BeatmapDiscussions.Header,
+  render: =>
+    div className: 'osu-layout osu-layout--full',
+      el Header,
+        beatmaps: @groupedBeatmaps()
         beatmapset: @state.beatmapset
-        beatmaps: @state.beatmaps
-        currentBeatmap: @state.currentBeatmap
+        currentBeatmap: @currentBeatmap()
         currentDiscussions: @currentDiscussions()
-        currentUser: @state.currentUser
         currentFilter: @state.currentFilter
-        beatmapsetDiscussion: @state.beatmapsetDiscussion
+        currentUser: @state.currentUser
+        discussions: @discussions()
+        discussionStarters: @discussionStarters()
+        events: @state.beatmapset.events
+        mode: @state.currentMode
+        selectedUserId: @state.selectedUserId
         users: @users()
-        mode: @state.mode
 
-      el BeatmapDiscussions.ModeSwitcher,
-        mode: @state.mode
+      el ModeSwitcher,
+        innerRef: @modeSwitcherRef
+        mode: @state.currentMode
+        beatmapset: @state.beatmapset
+        currentBeatmap: @currentBeatmap()
+        currentDiscussions: @currentDiscussions()
+        currentFilter: @state.currentFilter
+        reviewsEnabled: @state.reviewsEnabled
 
-      div
-        className: 'osu-layout__section osu-layout__section--extra'
-        el BeatmapDiscussions.NewDiscussion,
-          currentUser: @state.currentUser
-          currentBeatmap: @state.currentBeatmap
-          mode: @state.mode
+      if @state.currentMode == 'events'
+        div
+          className: 'osu-layout__section osu-layout__section--extra'
+          el Events,
+            events: @state.beatmapset.events
+            users: @users()
+            discussions: @discussions()
 
-        el BeatmapDiscussions.Discussions,
-          beatmapset: @state.beatmapset
-          beatmapsetDiscussion: @state.beatmapsetDiscussion
-          currentBeatmap: @state.currentBeatmap
-          currentDiscussions: @currentDiscussions()
-          currentFilter: @state.currentFilter
-          currentUser: @state.currentUser
-          mode: @state.mode
-          readPostIds: @state.readPostIds
-          userPermissions: @state.userPermissions
-          users: @users()
+      else
+        div
+          className: 'osu-layout__section osu-layout__section--extra'
+          # TODO: toggle to the review editor instead (when it exists)
+          if @state.currentMode != 'reviews'
+            el NewDiscussion,
+              beatmapset: @state.beatmapset
+              currentUser: @state.currentUser
+              currentBeatmap: @currentBeatmap()
+              currentDiscussions: @currentDiscussions()
+              innerRef: @newDiscussionRef
+              mode: @state.currentMode
+              pinned: @state.pinnedNewDiscussion
+              setPinned: @setPinnedNewDiscussion
+              stickTo: @modeSwitcherRef
+              autoFocus: @focusNewDiscussion
+
+          el DiscussionsContext.Provider,
+            value: @discussions()
+            el BeatmapsContext.Provider,
+              value: @beatmaps()
+              el Discussions,
+                beatmapset: @state.beatmapset
+                currentBeatmap: @currentBeatmap()
+                currentDiscussions: @currentDiscussions()
+                currentFilter: @state.currentFilter
+                currentUser: @state.currentUser
+                mode: @state.currentMode
+                readPostIds: @state.readPostIds
+                showDeleted: @state.showDeleted
+                users: @users()
+
+      el BackToTop
 
 
-  checkNew: ->
+  beatmaps: =>
+    return @cache.beatmaps if @cache.beatmaps?
+
+    hasDiscussion = {}
+    hasDiscussion[d.beatmap_id] = true for d in @state.beatmapset.discussions
+
+    @cache.beatmaps ?=
+      _(@state.beatmapset.beatmaps)
+      .filter (beatmap) ->
+        !_.isEmpty(beatmap) && (!beatmap.deleted_at? || hasDiscussion[beatmap.id]?)
+      .keyBy 'id'
+      .value()
+
+
+  checkNew: =>
     @nextTimeout ?= @checkNewTimeoutDefault
 
-    Timeout.clear @checkNewTimeout
+    Timeout.clear @timeouts.checkNew
+    @xhr.checkNew?.abort()
 
-    @checkNewAjax = $.ajax document.location.pathname,
-      data:
-        format: 'json'
-        last_updated: moment(@state.beatmapsetDiscussion.updated_at).unix()
-
+    @xhr.checkNew = $.get laroute.route('beatmapsets.discussion', beatmapset: @state.beatmapset.id),
+      format: 'json'
+      last_updated: @lastUpdate()?.unix()
     .done (data, _textStatus, xhr) =>
       if xhr.status == 304
         @nextTimeout *= 2
@@ -130,153 +203,298 @@ BeatmapDiscussions.Main = React.createClass
 
       @nextTimeout = @checkNewTimeoutDefault
 
-      @setBeatmapsetDiscussion null, beatmapsetDiscussion: data.beatmapsetDiscussion
+      @update null, beatmapset: data.beatmapset
 
     .always =>
       @nextTimeout = Math.min @nextTimeout, @checkNewTimeoutMax
 
-      @checkNewTimeout = Timeout.set @nextTimeout, @checkNew
+      @timeouts.checkNew = Timeout.set @nextTimeout, @checkNew
 
 
-  currentDiscussions: ->
-    if !@cache.currentDiscussions?
-      general = []
-      timeline = []
-      generalAll = []
+  currentBeatmap: =>
+    @beatmaps()[@state.currentBeatmapId] ? BeatmapHelper.default(group: @groupedBeatmaps())
 
-      timelineByFilter =
-        deleted: {}
-        mine: {}
-        pending: {}
-        praises: {}
-        resolved: {}
-        total: {}
 
-      for d in @state.beatmapsetDiscussion.beatmap_discussions
-        if d.timestamp?
-          continue if d.beatmap_id != @state.currentBeatmap.id
+  currentDiscussions: =>
+    return @cache.currentDiscussions if @cache.currentDiscussions?
 
-          timeline.push d
-          timelineByFilter.total[d.id] = d
+    countsByBeatmap = {}
+    countsByPlaymode = {}
+    totalHype = 0
+    unresolvedIssues = 0
+    byMode =
+      timeline: []
+      general: []
+      generalAll: []
+      reviews: []
+    byFilter =
+      deleted: {}
+      hype: {}
+      mapperNotes: {}
+      mine: {}
+      pending: {}
+      praises: {}
+      resolved: {}
+      total: {}
+    timelineAllUsers = []
 
-          if d.deleted_at?
-            timelineByFilter.deleted[d.id] = d
-          else if d.message_type == 'praise'
-            timelineByFilter.praises[d.id] = d
-          else
-            if d.resolved
-              timelineByFilter.resolved[d.id] = d
+    for own mode, _items of byMode
+      for own _filter, modes of byFilter
+        modes[mode] = {}
+
+    for own _id, d of @discussions()
+      if !d.deleted_at?
+        totalHype++ if d.message_type == 'hype'
+
+        if d.can_be_resolved && !d.resolved
+          beatmap = @beatmaps()[d.beatmap_id]
+
+          if !d.beatmap_id? || (beatmap? && !beatmap.deleted_at?)
+            unresolvedIssues++
+
+          if beatmap?
+            countsByBeatmap[beatmap.id] ?= 0
+            countsByBeatmap[beatmap.id]++
+
+            if !beatmap.deleted_at?
+              countsByPlaymode[beatmap.mode] ?= 0
+              countsByPlaymode[beatmap.mode]++
+
+      if d.message_type == 'review'
+        mode = 'reviews'
+      else
+        if d.beatmap_id?
+          if d.beatmap_id == @currentBeatmap().id
+            if d.timestamp?
+              mode = 'timeline'
+              timelineAllUsers.push d
             else
-              timelineByFilter.pending[d.id] = d
-
-          if d.user_id == @state.currentUser.id
-            timelineByFilter.mine[d.id] = d
-
-        else
-          if d.beatmap_id?
-            if d.beatmap_id == @state.currentBeatmap.id
-              general.push d
+              mode = 'general'
           else
-            generalAll.push d
+            mode = null
+        else
+          mode = 'generalAll'
 
-      timeline = _.orderBy timeline, ['timestamp', 'id']
-      general = _.orderBy general, 'id'
-      generalAll = _.orderBy generalAll, 'id'
+      # belongs to different beatmap, excluded
+      continue unless mode?
 
-      @cache.currentDiscussions =
-        general: general
-        generalAll: generalAll
-        timeline: timeline
-        timelineByFilter: timelineByFilter
+      # skip if filtering users
+      continue if @state.selectedUserId? && d.user_id != @state.selectedUserId
 
-    @cache.currentDiscussions
+      filters = ['total']
+
+      if d.deleted_at?
+        filters.push 'deleted'
+      else if d.message_type == 'hype'
+        filters.push 'hype'
+        filters.push 'praises'
+      else if d.message_type == 'praise'
+        filters.push 'praises'
+      else if d.can_be_resolved
+        if d.resolved
+          filters.push 'resolved'
+        else
+          filters.push 'pending'
+
+      if d.user_id == @state.currentUser.id
+        filters.push 'mine'
+
+      if d.message_type == 'mapper_note'
+        filters.push 'mapperNotes'
+
+      for filter in filters
+        byFilter[filter][mode][d.id] = d
+
+      byMode[mode].push d
+
+    timeline = byMode.timeline
+    general = byMode.general
+    generalAll = byMode.generalAll
+    reviews = byMode.reviews
+
+    @cache.currentDiscussions = {general, generalAll, timeline, reviews, timelineAllUsers, byFilter, countsByBeatmap, countsByPlaymode, totalHype, unresolvedIssues}
 
 
-  jumpByHash: ->
-    target = BeatmapDiscussionHelper.hashParse()
+  discussions: =>
+    # skipped discussions
+    # - not privileged (deleted discussion)
+    # - deleted beatmap
+    @cache.discussions ?= _ @state.beatmapset.discussions
+                            .filter (d) -> !_.isEmpty(d)
+                            .keyBy 'id'
+                            .value()
 
-    if target.discussionId?
-      return $.publish 'beatmapDiscussion:jump', id: target.discussionId
 
-    target.beatmapId ?= @state.currentBeatmap.id
-    $.publish 'beatmap:select', id: target.beatmapId
+  discussionStarters: =>
+    _ @discussions()
+      .map 'user_id'
+      .uniq()
+      .map (user_id) => @users()[user_id]
+      .orderBy (user) -> user.username.toLocaleLowerCase()
+      .value()
 
 
-  jumpTo: (_e, {id}) ->
-    discussion = _.find @state.beatmapsetDiscussion.beatmap_discussions, id: id
+  groupedBeatmaps: (discussionSet) =>
+    @cache.groupedBeatmaps ?= BeatmapHelper.group _.values(@beatmaps())
+
+
+  jumpToDiscussionByHash: =>
+    target = BeatmapDiscussionHelper.urlParse(null, @state.beatmapset.discussions)
+
+    @jumpTo(null, id: target.discussionId) if target.discussionId?
+
+
+  jumpTo: (_e, {id}) =>
+    discussion = @discussions()[id]
 
     return if !discussion?
 
-    mode = if discussion.timestamp? then 'timeline' else 'general'
+    newState = BeatmapDiscussionHelper.stateFromDiscussion(discussion)
 
-    @setMode null, mode, =>
-      @setCurrentBeatmapId null,
-        id: discussion.beatmap_id
-        callback: =>
-          $.publish 'beatmapDiscussionEntry:highlight', id: discussion.id
+    newState.filter =
+      if @currentDiscussions().byFilter[@state.currentFilter][newState.mode][id]?
+        @state.currentFilter
+      else
+        BeatmapDiscussionHelper.DEFAULT_FILTER
 
-          target = $(".js-beatmap-discussion-jump[data-id='#{id}']")
-          $(window).stop().scrollTo target, 500,
-            offset: modeSwitcher[0].getBoundingClientRect().height * -1
+    if @state.selectedUserId? && @state.selectedUserId != discussion.user_id
+      newState.selectedUserId = null
+
+    newState.callback = =>
+      $.publish 'beatmapDiscussionEntry:highlight', id: discussion.id
+
+      target = $(".js-beatmap-discussion-jump[data-id='#{id}']")
+
+      return if target.length == 0
+
+      offsetTop = target.offset().top - @modeSwitcherRef.current.getBoundingClientRect().height
+      offsetTop -= @newDiscussionRef.current.getBoundingClientRect().height if @state.pinnedNewDiscussion
+
+      $(window).stop().scrollTo window.stickyHeader.scrollOffset(offsetTop), 500
+
+    @update null, newState
 
 
-  markPostRead: (_e, {id}) ->
+  jumpToClick: (e) =>
+    url = e.currentTarget.getAttribute('href')
+    id = BeatmapDiscussionHelper.urlParse(url, @state.beatmapset.discussions).discussionId
+
+    return if !id?
+
+    e.preventDefault()
+    @jumpTo null, {id}
+
+
+  lastUpdate: =>
+    lastUpdate = _.max [
+      @state.beatmapset.last_updated
+      _.maxBy(@state.beatmapset.discussions, 'updated_at')?.updated_at
+      _.maxBy(@state.beatmapset.events, 'created_at')?.created_at
+    ]
+
+    moment(lastUpdate) if lastUpdate?
+
+
+  markPostRead: (_e, {id}) =>
     return if _.includes @state.readPostIds, id
 
     @setState readPostIds: @state.readPostIds.concat(id)
 
 
-  setBeatmapset: (_e, {beatmapset, callback}) ->
-    @setState
-      beatmapset: beatmapset
-      beatmaps: BeatmapHelper.group beatmapset.beatmaps
+  queryFromLocation: (discussions = @state.beatmapsetDiscussion.beatmap_discussions) =>
+    BeatmapDiscussionHelper.urlParse(null, discussions)
+
+
+  saveStateToContainer: =>
+    @props.container.dataset.beatmapsetDiscussionState = JSON.stringify(@state)
+
+
+  setCurrentPlaymode: (e, {mode}) =>
+    @update e, playmode: mode
+
+
+  setPinnedNewDiscussion: (pinned) =>
+    @setState pinnedNewDiscussion: pinned
+
+
+  toggleShowDeleted: =>
+    @setState showDeleted: !@state.showDeleted
+
+
+  update: (_e, options) =>
+    {
       callback
+      mode
+      modeIf
+      beatmapId
+      playmode
+      beatmapset
+      watching
+      filter
+      selectedUserId
+    } = options
+    newState = {}
+
+    if beatmapset?
+      newState.beatmapset = beatmapset
+
+    if watching?
+      newState.beatmapset ?= _.assign {}, @state.beatmapset
+      newState.beatmapset.current_user_attributes.is_watching = watching
+
+    if playmode?
+      beatmap = BeatmapHelper.default items: @groupedBeatmaps()[playmode]
+      beatmapId = beatmap?.id
+
+    if beatmapId? && beatmapId != @currentBeatmap().id
+      newState.currentBeatmapId = beatmapId
+
+    if filter?
+      if @state.currentMode == 'events'
+        newState.currentMode = @lastMode ? BeatmapDiscussionHelper.DEFAULT_MODE
+
+      if filter != @state.currentFilter
+        newState.currentFilter = filter
+
+    if mode? && mode != @state.currentMode
+      if !modeIf? || modeIf == @state.currentMode
+        newState.currentMode = mode
+
+      # switching to events:
+      # - record last filter, to be restored when setMode is called
+      # - record last mode, to be restored when setFilter is called
+      # - set filter to total
+      if mode == 'events'
+        @lastMode = @state.currentMode
+        @lastFilter = @state.currentFilter
+        newState.currentFilter = 'total'
+      # switching from events:
+      # - restore whatever last filter set or default to total
+      else if @state.currentMode == 'events'
+        newState.currentFilter = @lastFilter ? 'total'
+
+    newState.selectedUserId = selectedUserId if selectedUserId != undefined # need to setState if null
+
+    @setState newState, callback
 
 
-  setBeatmapsetDiscussion: (_e, {beatmapsetDiscussion, callback}) ->
-    @setState
-      beatmapsetDiscussion: beatmapsetDiscussion
-      callback
-
-  setCurrentBeatmapId: (_e, {id, callback}) ->
-    return callback?() if !id?
-    return callback?() if id == @state.currentBeatmap.id
-
-    beatmap = _.find @state.beatmapset.beatmaps, id: id
-
-    return callback?() if !beatmap?
-
-    @setState currentBeatmap: beatmap, callback
+  urlFromState: =>
+    BeatmapDiscussionHelper.url
+      beatmap: @currentBeatmap()
+      mode: @state.currentMode
+      filter: @state.currentFilter
+      user: @state.selectedUserId
 
 
-  setCurrentPlaymode: (_e, {mode}) ->
-    beatmap = BeatmapHelper.default items: @state.beatmaps[mode]
-    @setCurrentBeatmapId null, id: beatmap?.id
-
-
-  setFilter: (_e, {filter}) ->
-    return if @state.mode == 'timeline' && filter == @state.currentFilter
-
-    @setState
-      mode: 'timeline'
-      currentFilter: filter
-
-
-  setMode: (_e, mode, callback) ->
-    return callback?() if mode == @state.mode
-
-    @setState mode: mode, callback
-
-
-  users: ->
+  users: =>
     if !@cache.users?
-      @cache.users = _.keyBy @state.beatmapsetDiscussion.users, 'id'
+      @cache.users = _.keyBy @state.beatmapset.related_users, 'id'
       @cache.users[null] = @cache.users[undefined] =
         username: osu.trans 'users.deleted'
 
     @cache.users
 
-  ujsDiscussionUpdate: (_e, data) ->
+
+  ujsDiscussionUpdate: (_e, data) =>
     # to allow ajax:complete to be run
-    Timeout.set 0, =>
-      @setBeatmapsetDiscussion null, beatmapsetDiscussion: data
+    Timeout.set 0, => @update(null, beatmapset: data)

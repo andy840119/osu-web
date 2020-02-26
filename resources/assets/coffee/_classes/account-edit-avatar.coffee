@@ -1,5 +1,5 @@
 ###
-#    Copyright 2015-2017 ppy Pty. Ltd.
+#    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 #
 #    This file is part of osu!web. osu!web is distributed with the hope of
 #    attracting more community contributions to the core ecosystem of osu!.
@@ -29,15 +29,18 @@ class @AccountEditAvatar
     @main = document.getElementsByClassName('js-account-edit-avatar')
 
 
+  $button: ->
+    $('.js-account-edit-avatar__button')
+
+
   initialize: =>
     return if !@main[0]?
 
     @isAvailable = true
 
-    @$button = $('.js-account-edit-avatar__button')
     @$main = $(@main)
 
-    @$button.fileupload
+    @$button().fileupload
       url: laroute.route('account.avatar')
       dataType: 'json'
       dropZone: @$main
@@ -90,4 +93,4 @@ class @AccountEditAvatar
     return if !@isAvailable
 
     @isAvailable = false
-    @$button.fileupload 'destroy'
+    @$button().fileupload 'destroy'

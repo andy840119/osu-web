@@ -1,5 +1,5 @@
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -17,165 +17,65 @@
  */
 
 .navbar-mobile {
-  @content-height: @navbar-mobile--content-height;
-  border-width: 0;
-  margin-bottom: 0;
+  background-color: @osu-colour-h2;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: @z-index--nav-bar;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  height: @navbar-height;
+  padding: 0 10px;
 
   &__brand {
-    float: none;
     padding: 0 10px;
-    height: auto;
-  }
-
-  &__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: @navbar-height;
-
-    &::after,
-    &::before {
-      display: none;
-    }
+    min-width: 0;
+    font-size: @font-size--title-small;
   }
 
   &__header-section {
     display: flex;
     align-items: center;
+    min-width: 0;
+    flex: 1;
+
+    &--buttons {
+      flex: none;
+    }
   }
 
   &__logo {
-    display: inline-block;
-    background-image: url('/images/layout/osu-logo.png');
-    background-size: 100%;
-
-    width: @content-height;
-    height: @content-height;
-  }
-
-  &__menu {
-    box-shadow: none;
-    border-top-width: 0;
-    background-color: #444;
-    position: absolute;
-    width: 100%;
-    z-index: @z-index--nav-popup;
-
-    &:focus,
-    &:hover,
-    &:active,
-    & {
-      color: #fff;
-    }
-  }
-
-  &__menu-item {
-    // to win over bootstrap's selector
-    && {
-      color: fade(#fff, 50%);
-      display: flex;
-      align-items: center;
-
-      &:focus,
-      &:hover,
-      &:active,
-      .open > & {
-        color: #fff;
-      }
-
-      &--user {
-        flex: 1 0 auto;
-        color: #fff;
-      }
-
-      &--logout {
-        .default-border-radius();
-        width: @content-height;
-        height: @content-height;
-        border: 2px solid fade(#fff, 50%);
-        color: #fff;
-
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        margin-right: @navbar-padding-horizontal;
-
-        &:focus,
-        &:hover,
-        &:active {
-          background-color: fade(#fff, 50%);
-          color: #333;
-          border-color: transparent;
-        }
-      }
-    }
-  }
-
-  &__menu-item-icon {
-    width: @content-height;
-    margin-right: 10px;
-    text-align: center;
-
-    &--closed {
-      display: inline-block;
-
-      .open > a > & {
-        display: none;
-      }
-    }
-
-    &--opened {
-      display: none;
-
-      .open > a > & {
-        display: inline-block;
-      }
-    }
-  }
-
-  &__menu-items {
-    margin-top: 0;
-  }
-
-  &__menu-subitem {
-    // to win over bootstrap's selector
-    &&&& {
-      color: #fff;
-      display: flex;
-      align-items: center;
-      padding-left: (@content-height + 20px);
-
-      &:focus,
-      &:hover,
-      &:active {
-        color: #fff;
-        background-color: #333;
-      }
-    }
-  }
-
-  &__menu-subitem-icon {
-    width: @content-height;
-    margin-right: 10px;
+    flex: none;
+    display: block;
+    background-image: url('/images/layout/osu-logo-white.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    width: (@navbar-mobile--content-height + 10px);
+    height: $width;
+    margin: -5px;
   }
 
   &__toggle {
-    float: none;
-    width: @content-height;
-    height: @content-height;
+    .reset-input();
+    flex: none;
+    width: @navbar-mobile--content-height;
+    height: @navbar-mobile--content-height;
     padding: 0;
     margin: 0;
 
     border-width: 2px;
-    color: #fff;
+    color: @osu-colour-c1;
 
     display: block;
 
-    &:focus,
-    &:hover,
-    &:active {
-      border-color: transparent;
+    &:hover {
+      color: @osu-colour-l1;
+    }
+
+    &.js-click-menu--active {
+      transform: rotateX(0.5turn);
     }
   }
 
@@ -183,13 +83,5 @@
     display: flex;
     justify-content: center;
     align-items: center;
-  }
-
-  &__user {
-    && {
-      display: flex;
-      align-items: center;
-      background-color: #333;
-    }
   }
 }

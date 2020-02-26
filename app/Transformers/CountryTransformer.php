@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -39,10 +39,10 @@ class CountryTransformer extends Fractal\TransformerAbstract
     {
         return $this->item($country, function ($country) {
             return [
-              'active_users' => $country->usercount,
-              'play_count' => $country->playcount,
-              'ranked_score' => $country->rankedscore,
-              'performance' => $country->pp,
+                'active_users' => $country->usercount,
+                'play_count' => $country->playcount,
+                'ranked_score' => $country->rankedscore,
+                'performance' => $country->pp,
             ];
         });
     }

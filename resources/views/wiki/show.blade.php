@@ -1,5 +1,5 @@
 {{--
-    Copyright 2015-2017 ppy Pty. Ltd.
+    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 
     This file is part of osu!web. osu!web is distributed with the hope of
     attracting more community contributions to the core ecosystem of osu!.
@@ -15,122 +15,80 @@
     You should have received a copy of the GNU Affero General Public License
     along with osu!web.  If not, see <http://www.gnu.org/licenses/>.
 --}}
+@php
+    $url = wiki_url($page->path, $locale);
+    $title = $page->title();
+    $subSection = $title;
+
+    $links = [
+        [
+            'title' => trans('layout.header.help.index'),
+            'url' => wiki_url('Main_Page'),
+        ],
+    ];
+
+    $parentTitle = presence($page->subtitle());
+    if ($parentTitle !== null) {
+        $link = ['title' => $parentTitle];
+        $subSection = "{$parentTitle} / {$subSection}";
+        if ($page->hasParent()) {
+            $link['url'] = wiki_url($page->parentPath(), $locale);
+        }
+        $links[] = $link;
+    }
+
+    $links[] = compact('title', 'url');
+@endphp
 
 @extends('master', [
-    'body_additional_classes' => 'osu-layout--body-333',
     'title' => null,
-    'titleAppend' => (present($page->subtitle()) ? $page->subtitle().' / ' : '').$page->title(),
+    'titlePrepend' => $page->title(true),
 ])
 
 @section('content')
-    <div class="osu-layout__row">
-        <div class="osu-page-header osu-page-header--wiki">
-            <div class="osu-page-header__title-box">
-                @if (present($page->subtitle()))
-                    <h2 class="osu-page-header__title osu-page-header__title--small">
-                        {{ $page->subtitle() }}
-                    </h2>
-                @endif
+    @component('layout._page_header_v4', ['params' => [
+        'links' => $links,
+        'linksBreadcrumb' => true,
+        'section' => trans('layout.header.help._'),
+        'subSection' => $subSection,
+        'theme' => 'help',
+    ]])
+        @slot('navAppend')
+            @include('wiki._actions')
+        @endslot
+    @endcomponent
 
-                <h1 class="osu-page-header__title osu-page-header__title--main">
-                    {{ $page->title() }}
-                </h1>
-            </div>
-
-            @if (!empty($page->locales()))
-                <div class="osu-page-header__actions">
-                    <div class="forum-post-actions">
-                        <div class="forum-post-actions__action">
-                            <a
-                                class="btn-circle"
-                                href="{{ $page->editUrl() }}"
-                                title="{{ trans('wiki.show.edit.link') }}"
-                                data-tooltip-position="left center"
-                            >
-                                <i class="fa fa-github"></i>
-                            </a>
-                        </div>
-
-                        @if (priv_check('WikiPageRefresh')->can())
-                            <div class="forum-post-actions__action">
-                                <a
-                                    class="btn-circle"
-                                    href="#"
-                                    data-remote="true"
-                                    data-method="PUT"
-                                    title="{{ trans('wiki.show.edit.refresh') }}"
-                                    data-tooltip-position="left center"
-                                >
-                                    <i class="fa fa-refresh"></i>
-                                </a>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            @endif
-        </div>
-    </div>
 
     <div class="osu-page osu-page--wiki">
-        @if (count($page->locales()) > 0)
-            <div class="wiki-language-list">
-                <div class="wiki-language-list__header">
-                    {{ trans('wiki.show.languages') }}:
-                </div>
-
-                @foreach ($page->locales() as $locale)
-                    @if ($locale === $page->requestedLocale)
-                        <span class="wiki-language-list__item wiki-language-list__item--current">
-                            {{ App\Libraries\LocaleMeta::nameFor($locale) }}
-                        </span>
-                    @else
-                        <a class="wiki-language-list__item wiki-language-list__item--link" href="?locale={{ $locale }}">
-                            {{ App\Libraries\LocaleMeta::nameFor($locale) }}
-                        </a>
-                    @endif
-                @endforeach
-            </div>
-        @endif
-
-        @if ($page->page() !== null && $page->locale !== $page->requestedLocale)
-            <div class="wiki-fallback-locale">
-                <div class="wiki-fallback-locale__box">
-                    {{ trans('wiki.show.fallback_translation', ['language' => locale_name($page->requestedLocale)]) }}
-                </div>
-            </div>
-        @endif
+        @include('wiki._notice')
 
         <div class="wiki-page">
-            <div
-                class="hidden-xs wiki-page__toc js-wiki-toc-float-container js-sticky-header"
-                data-sticky-header-target="wiki-toc"
-            >
-                <div class="js-sync-height--target" data-sync-height-id="wiki-toc"></div>
-
-                <div
-                    class="wiki-toc js-wiki-toc js-wiki-toc-float js-sync-height--reference"
-                    data-sync-height-target="wiki-toc"
-                >
+            <div class="hidden-xs wiki-page__toc u-fancy-scrollbar">
+                <div class="wiki-toc">
                     <h2 class="wiki-toc__title">
                         {{ trans('wiki.show.toc') }}
                     </h2>
 
-                    @if ($page->page() !== null)
+                    @if ($page->get() !== null)
                         @include('wiki._toc')
                     @endif
                 </div>
             </div>
 
             <div class="wiki-page__content">
-                @if ($page->page() !== null)
-                    {!! $page->page()['output'] !!}
+                @if ($page->get() !== null)
+                    {!! $page->get()['output'] !!}
                 @else
                     <div class="wiki-content">
-                        @if (empty($page->locales()))
-                            {{ trans('wiki.show.missing') }}
-                        @else
-                            {{ trans('wiki.show.missing_translation') }}
-                        @endif
+                        <p>
+                            {{ trans('wiki.show.missing', ['keyword' => $page->path ]) }}
+                        </p>
+
+                        <p>
+                            {!! trans('wiki.show.search', ['link' =>
+                                link_to(route('search', ['mode' => 'wiki_page', 'query' => $page->path]), $page->path)
+                            ]) !!}
+                        </p>
                     </div>
                 @endif
             </div>

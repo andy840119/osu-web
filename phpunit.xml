@@ -7,17 +7,20 @@
          convertNoticesToExceptions="true"
          convertWarningsToExceptions="true"
          processIsolation="false"
-         stopOnFailure="false"
-         syntaxCheck="false">
+         stopOnFailure="false">
     <testsuites>
         <testsuite name="Application Test Suite">
             <directory>./tests/</directory>
+            <exclude>./tests/Browser</exclude>
         </testsuite>
     </testsuites>
     <php>
+        <env name="ALLOW_REGISTRATION" value="true"/>
         <env name="APP_ENV" value="testing"/>
+        <env name="BEATMAPSET_REQUIRED_HYPE" value="0"/>
+        <env name="BROADCAST_DRIVER" value="log"/>
         <env name="CACHE_DRIVER" value="array"/>
+        <env name="CHAT_PRIVATE_LIMIT" value="2"/>
         <env name="SESSION_DRIVER" value="array"/>
-        <env name="CAMO_KEY" value=""/>
     </php>
 </phpunit>

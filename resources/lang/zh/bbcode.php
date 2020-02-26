@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -19,7 +19,7 @@
  */
 
 return [
-    'bold' => '加粗',
+    'bold' => '粗体',
     'heading' => '标题',
     'image' => '图片',
     'italic' => '斜体',
@@ -30,9 +30,9 @@ return [
         '_' => '字体大小',
         'tiny' => '极小',
         'small' => '小',
-        'normal' => '中',
+        'normal' => '普通',
         'large' => '大',
     ],
-    'spoilerbox' => '折叠文字', //翻译可能不准确
+    'spoilerbox' => '折叠文字',
     'strikethrough' => '删除线',
 ];

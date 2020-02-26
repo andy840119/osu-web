@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -44,7 +44,9 @@ class StatisticsTransformer extends Fractal\TransformerAbstract
             'pp_raw' => $stats->rank_score,
             'accuracy' => $stats->accuracy_new,
             'count_rank_ss' => $stats->x_rank_count,
+            'count_rank_ssh' => $stats->xh_rank_count,
             'count_rank_s' => $stats->s_rank_count,
+            'count_rank_sh' => $stats->sh_rank_count,
             'count_rank_a' => $stats->a_rank_count,
             'pp_country_rank' => $stats->countryRank(),
         ];

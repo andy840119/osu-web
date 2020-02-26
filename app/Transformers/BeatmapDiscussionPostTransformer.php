@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -25,6 +25,10 @@ use League\Fractal;
 
 class BeatmapDiscussionPostTransformer extends Fractal\TransformerAbstract
 {
+    protected $availableIncludes = [
+        'beatmap_discussion',
+    ];
+
     public function transform(BeatmapDiscussionPost $post)
     {
         if (!priv_check('BeatmapDiscussionPostShow', $post)->can()) {
@@ -35,7 +39,7 @@ class BeatmapDiscussionPostTransformer extends Fractal\TransformerAbstract
             'id' => $post->id,
             'beatmap_discussion_id' => $post->beatmap_discussion_id,
             'user_id' => $post->user_id,
-            'last_editor_id' => presence($post->last_editor_id, $post->user_id),
+            'last_editor_id' => $post->last_editor_id,
             'deleted_by_id' => $post->deleted_by_id,
 
             'system' => $post->system,
@@ -45,5 +49,13 @@ class BeatmapDiscussionPostTransformer extends Fractal\TransformerAbstract
             'updated_at' => json_time($post->updated_at),
             'deleted_at' => json_time($post->deleted_at),
         ];
+    }
+
+    public function includeBeatmapDiscussion(BeatmapDiscussionPost $post)
+    {
+        return $this->item(
+            $post->beatmapDiscussion,
+            new BeatmapDiscussionTransformer()
+        );
     }
 }

@@ -1,5 +1,5 @@
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -19,32 +19,47 @@
 .beatmap-discussion-post {
   @_top: beatmap-discussion-post;
 
-  @_info-text-size: 10px;
+  @_info-text-size: @font-size--small;
 
-  @_discussion-text-size: 13px;
-  @_reply-text-size: 12px;
+  @_discussion-text-size: @font-size--title-small-2;
+  @_reply-text-size: @font-size--normal-2;
+
+  @_content-gutter-base: 15px;
+
+  transition: background-color .1s ease-in-out;
 
   &--discussion {
-    flex: 1;
+    min-width: 0;
+
+    @media @desktop {
+      flex: 1;
+    }
   }
 
   &--new-reply {
-    background-color: #eee;
+    background-color: @osu-colour-b5;
     border-radius: 0 0 @border-radius-base @border-radius-base;
+  }
+
+  &--new-reply-placeholder {
+    padding: 10px;
+    display: flex;
+    justify-content: flex-end;
+    background-color: transparent;
   }
 
   &--unread {
     &::before {
       .full-size();
+      content: ' ';
       background-color: @blue-darker;
       width: 5px;
-      height: calc(100% ~'+' 10px);
-      top: -5px;
     }
   }
 
   &__action {
     margin: 0 5px;
+    text-transform: lowercase;
 
     &--button {
       .reset-input();
@@ -54,11 +69,32 @@
       margin: 0 5px;
       font-size: @font-size--small;
     }
+
+    &--cancel {
+      .reset-input();
+      position: absolute;
+      color: @osu-colour-f1;
+      top: 0px;
+      right: 0px;
+      width: @beatmap-discussion--reply-padding;
+      height: @beatmap-discussion--reply-padding;
+    }
   }
 
   &__actions {
     display: flex;
-    justify-content: space-between;
+
+    .@{_top}--editing & {
+      justify-content: flex-end;
+    }
+
+    .@{_top}--new-reply & {
+      justify-content: flex-end;
+    }
+
+    .@{_top}--editing.@{_top}--reply & {
+      margin-top: 5px;
+    }
   }
 
   &__actions-group {
@@ -68,40 +104,76 @@
   }
 
   &__avatar {
+    flex: none;
     width: @beatmap-discussion--avatar-size;
     height: @beatmap-discussion--avatar-size;
-    margin-right: 10px;
-    flex: none;
+    margin-bottom: 5px;
+
+    @media @desktop {
+      margin-right: 10px;
+      margin-bottom: 0;
+    }
   }
 
   &__content {
     display: flex;
-    padding: 10px 15px;
-
-    flex: 1;
+    padding: 10px @_content-gutter-base;
+    flex-direction: column;
+    flex: none;
     min-width: 0;
 
+    @media @desktop {
+      flex-direction: row;
+      flex: 1;
+    }
+
     .@{_top}--reply & {
-      padding-left: @beatmap-discussion--reply-padding;
-      padding-right: @beatmap-discussion--reply-padding;
+      // override padding for discussion previews
+      .beatmap-discussion--preview &,
+      .beatmap-discussion-review-post-embed & {
+        padding: 10px @_content-gutter-base;
+      }
+
+      @media @desktop {
+        padding-left: @beatmap-discussion--reply-padding;
+        padding-right: @beatmap-discussion--reply-padding;
+      }
+    }
+
+    .@{_top}--new-reply & {
+      padding-bottom: 0;
     }
   }
 
   &__footer {
     padding: 10px;
 
+    &--notice {
+      padding-top: 0;
+      padding-bottom: 0;
+      display: flex;
+      align-items: flex-end;
+      font-size: @font-size--normal;
+      color: @osu-colour-f1;
+    }
+
     .@{_top}--reply & {
-      padding-left: @beatmap-discussion--reply-padding;
-      padding-right: @beatmap-discussion--reply-padding;
+      padding-left: @_content-gutter-base;
+      padding-right: @_content-gutter-base;
+
+      @media @desktop {
+        padding-left: @beatmap-discussion--reply-padding;
+        padding-right: @beatmap-discussion--reply-padding;
+      }
     }
   }
 
   &__info {
     font-size: @_info-text-size;
     margin-right: 10px;
+    color: @osu-colour-f1;
 
     &--edited {
-      color: @gray-light;
       font-style: italic;
     }
   }
@@ -113,7 +185,6 @@
     .@{_top}--reply & {
       &::after {
         content: '';
-        background-color: #eee;
         height: 1px;
         align-self: center;
         flex: 1;
@@ -122,13 +193,17 @@
   }
 
   &__info-user {
+    .link-plain();
+    .link-default();
+    opacity: 0.5;
     font-weight: 600;
   }
 
   &__message {
     .content-font();
-    word-wrap: break-word;
+    word-break: break-word;
     margin-bottom: 10px;
+    color: white;
 
     .@{_top}--discussion & {
       font-size: @_discussion-text-size;
@@ -139,23 +214,39 @@
     }
 
     .@{_top}--deleted & {
-      opacity: 0.75;
+      opacity: 0.5;
       font-style: italic;
+    }
+
+    &::placeholder {
+      color: @osu-colour-f1;
     }
 
     &--editor {
       .reset-input();
-      .default-border-radius();
       width: 100%;
       resize: vertical;
-      margin-bottom: 5px;
+      min-height: 3em;
+
+      // --reply part to override top modifier
+      &, .@{_top}--reply & {
+        font-size: @font-size--phone-input;
+
+        @media @desktop {
+          font-size: @_reply-text-size;
+        }
+      }
     }
   }
 
   &__message-container {
-    flex: 1;
     min-width: 0;
     display: flex;
     flex-direction: column;
+    flex: none;
+
+    @media @desktop {
+      flex: 1;
+    }
   }
 }

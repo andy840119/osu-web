@@ -1,5 +1,5 @@
 {{--
-    Copyright 2015-2017 ppy Pty. Ltd.
+    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 
     This file is part of osu!web. osu!web is distributed with the hope of
     attracting more community contributions to the core ecosystem of osu!.
@@ -17,82 +17,98 @@
 --}}
 <div class="post-box-toolbar">
     <button
-        class="btn-circle btn-circle--button btn-circle--bbcode js-bbcode-btn--bold"
+        class="btn-circle btn-circle--bbcode js-bbcode-btn--bold"
         title="{{ trans("bbcode.bold") }}"
         type="button"
     >
-        <strong>B</strong>
+        <span class="btn-circle__content">
+            <i class="fas fa-bold"></i>
+        </span>
     </button>
 
     <button
-        class="btn-circle btn-circle--button btn-circle--bbcode js-bbcode-btn--italic"
+        class="btn-circle btn-circle--bbcode js-bbcode-btn--italic"
         title="{{ trans("bbcode.italic") }}"
         type="button"
     >
-        <em>I</em>
+        <span class="btn-circle__content">
+            <i class="fas fa-italic"></i>
+        </span>
     </button>
 
     <button
-        class="btn-circle btn-circle--button btn-circle--bbcode js-bbcode-btn--strikethrough"
+        class="btn-circle btn-circle--bbcode js-bbcode-btn--strikethrough"
         title="{{ trans("bbcode.strikethrough") }}"
         type="button"
     >
-        <i class="fa fa-strikethrough"></i>
+        <span class="btn-circle__content">
+            <i class="fas fa-strikethrough"></i>
+        </span>
     </button>
 
     <button
-        class="btn-circle btn-circle--button btn-circle--bbcode js-bbcode-btn--heading"
+        class="btn-circle btn-circle--bbcode js-bbcode-btn--heading"
         title="{{ trans("bbcode.heading") }}"
         type="button"
     >
-        H
+        <span class="btn-circle__content">
+            <i class="fas fa-heading"></i>
+        </span>
     </button>
 
     <button
-        class="btn-circle btn-circle--button btn-circle--bbcode js-bbcode-btn--link"
+        class="btn-circle btn-circle--bbcode js-bbcode-btn--link"
         title="{{ trans("bbcode.link") }}"
         type="button"
     >
-        <i class="fa fa-link"></i>
+        <span class="btn-circle__content">
+            <i class="fas fa-link"></i>
+        </span>
     </button>
 
     <button
-        class="btn-circle btn-circle--button btn-circle--bbcode js-bbcode-btn--spoilerbox"
+        class="btn-circle btn-circle--bbcode js-bbcode-btn--spoilerbox"
         title="{{ trans("bbcode.spoilerbox") }}"
         type="button"
     >
-        <i class="fa fa-barcode"></i>
+        <i class="fas fa-barcode"></i>
     </button>
 
     <button
-        class="btn-circle btn-circle--button btn-circle--bbcode js-bbcode-btn--list-numbered"
+        class="btn-circle btn-circle--bbcode js-bbcode-btn--list-numbered"
         title="{{ trans("bbcode.list_numbered") }}"
         type="button"
     >
-        <i class="fa fa-list-ol"></i>
+        <span class="btn-circle__content">
+            <i class="fas fa-list-ol"></i>
+        </span>
     </button>
 
     <button
-        class="btn-circle btn-circle--button btn-circle--bbcode js-bbcode-btn--list"
+        class="btn-circle btn-circle--bbcode js-bbcode-btn--list"
         title="{{ trans("bbcode.list") }}"
         type="button"
     >
-        <i class="fa fa-list"></i>
+        <span class="btn-circle__content">
+            <i class="fas fa-list"></i>
+        </span>
     </button>
 
     <button
-        class="btn-circle btn-circle--button btn-circle--bbcode js-bbcode-btn--image"
+        class="btn-circle btn-circle--bbcode js-bbcode-btn--image"
         title="{{ trans("bbcode.image") }}"
         type="button"
     >
-        <i class="fa fa-image"></i>
+        <span class="btn-circle__content">
+            <i class="fas fa-image"></i>
+        </span>
     </button>
 
     <label class="bbcode-size-select" title="{{ trans("bbcode.size._") }}">
         <span class="bbcode-size-select__label">
             {{ trans("bbcode.size._") }}
         </span>
-        <i class="fa fa-chevron-down"></i>
+        <i class="fas fa-chevron-down"></i>
 
         <select class="bbcode-size-select__select js-bbcode-btn--size">
             <option value="50">{{ trans("bbcode.size.tiny") }}</option>

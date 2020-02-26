@@ -1,5 +1,5 @@
 {{--
-    Copyright 2015-2017 ppy Pty. Ltd.
+    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 
     This file is part of osu!web. osu!web is distributed with the hope of
     attracting more community contributions to the core ecosystem of osu!.
@@ -17,11 +17,15 @@
 --}}
 <script data-turbolinks-eval="always">
     var csrf = "{{ csrf_token() }}";
-    var section = "{{ $current_section }}";
-    var page = "{{ $current_action }}";
-    var canonicalUrl = "{{ $canonicalUrl or '' }}";
-    var reloadUrl = "{{ $reloadUrl or '' }}";
-    var disqusShortName = "{{ config('services.disqus.short_name') }}";
+    var section = "{{ $currentSection }}";
+    var page = "{{ $currentAction }}";
+    var canonicalUrl = "{{ $canonicalUrl ?? '' }}";
+    var reloadUrl = "{{ $reloadUrl ?? '' }}";
 </script>
 
 @include ('layout._current_user')
+
+<div id="js-usercard__loading-template" class="hidden">
+    {{-- This content is a placeholder so that qtip has something to fade in while the react component mounts --}}
+    <div class="js-react--user-card"></div>
+</div>

@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -20,10 +20,26 @@
 
 namespace App\Models\Multiplayer;
 
+use App\Models\User;
+use Cache;
+
+/**
+ * @property \Carbon\Carbon|null $end_time
+ * @property \Illuminate\Database\Eloquent\Collection $events Event
+ * @property \Illuminate\Database\Eloquent\Collection $games Game
+ * @property mixed $keep_forever
+ * @property int $match_id
+ * @property string $name
+ * @property mixed $private
+ * @property \Carbon\Carbon|null $start_time
+ */
 class Match extends Model
 {
     protected $primaryKey = 'match_id';
     protected $hidden = ['private', 'keep_forever'];
+    protected $casts = [
+        'keep_forever' => 'boolean',
+    ];
     protected $dates = [
         'start_time',
         'end_time',
@@ -32,12 +48,34 @@ class Match extends Model
 
     public function games()
     {
-        return $this->hasMany(Game::class, 'match_id');
+        return $this->hasMany(Game::class);
     }
 
     public function events()
     {
-        return $this->hasMany(Event::class, 'match_id');
+        return $this->hasMany(Event::class);
+    }
+
+    public function currentGame()
+    {
+        $game = $this->games()->last();
+
+        if ($game !== null && $game->end_time === null) {
+            return $game;
+        }
+    }
+
+    public function hadPlayer(User $user)
+    {
+        return Cache::remember("multiplayer_participation_{$this->match_id}_{$user->user_id}", 60, function () use ($user) {
+            return $this->events()->where('user_id', $user->user_id)->whereIn('text', ['CREATE', 'JOIN'])->exists();
+        });
+    }
+
+    public function isTournamentMatch()
+    {
+        // keep_forever is being re-purposed to mark matches as 'tournament matches' (which will allow for public-read of chat and what-not)
+        return $this->keep_forever;
     }
 
     public function currentPlayers()

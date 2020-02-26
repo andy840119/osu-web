@@ -1,5 +1,5 @@
 ###
-#    Copyright 2015-2017 ppy Pty. Ltd.
+#    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 #
 #    This file is part of osu!web. osu!web is distributed with the hope of
 #    attracting more community contributions to the core ecosystem of osu!.
@@ -28,5 +28,11 @@ class @Blackout
     @toggle true
 
 
-  @toggle: (state) =>
-    Fade.toggle(@el[0], state) if @el[0]?
+  @toggle: (state, opacity) =>
+    el = @el[0]
+
+    return if !el?
+
+    opacity = null if !state || !opacity?
+    el.style.opacity = opacity
+    Fade.toggle(el, state)

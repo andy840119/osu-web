@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -20,7 +20,6 @@
 
 namespace App\Transformers;
 
-use App\Models\Score\Best as ScoreBest;
 use App\Models\UserStatistics;
 use League\Fractal;
 
@@ -28,7 +27,6 @@ class UserStatisticsTransformer extends Fractal\TransformerAbstract
 {
     protected $availableIncludes = [
         'rank',
-        'scoreRanks',
         'user',
     ];
 
@@ -47,15 +45,19 @@ class UserStatisticsTransformer extends Fractal\TransformerAbstract
             'pp' => $stats->rank_score,
             'pp_rank' => $stats->rank_score_index,
             'ranked_score' => $stats->ranked_score,
-            'hit_accuracy' => $stats->accuracy_new,
+            'hit_accuracy' => $stats->hit_accuracy,
             'play_count' => $stats->playcount,
+            'play_time' => $stats->total_seconds_played,
             'total_score' => $stats->total_score,
             'total_hits' => $stats->totalHits(),
             'maximum_combo' => $stats->max_combo,
             'replays_watched_by_others' => $stats->replay_popularity,
+            'is_ranked' => $stats->isRanked(),
             'grade_counts' => [
                 'ss' => $stats->x_rank_count,
+                'ssh' => $stats->xh_rank_count,
                 's' => $stats->s_rank_count,
+                'sh' => $stats->sh_rank_count,
                 'a' => $stats->a_rank_count,
             ],
         ];
@@ -69,35 +71,8 @@ class UserStatisticsTransformer extends Fractal\TransformerAbstract
 
         return $this->item($stats, function ($stats) {
             return [
-                'is_ranked' => $stats->rank_score_index > 0,
-                'global' => $stats->rank_score_index,
+                'global' => $stats->globalRank(),
                 'country' => $stats->countryRank(),
-            ];
-        });
-    }
-
-    public function includeScoreRanks(UserStatistics\Model $stats = null)
-    {
-        if ($stats === null) {
-            $stats = new UserStatistics\Osu();
-        }
-
-        if ($stats->user_id === null) {
-            $scoreRankCounts = null;
-        } else {
-            $scoreRankClass = ScoreBest::class.'\\'.get_class_basename(get_class($stats));
-            $scoreRankCounts = $scoreRankClass::where('user_id', '=', $stats->user_id)
-                ->rankCounts()
-                [$stats->user_id] ?? null;
-        }
-
-        return $this->item($scoreRankCounts, function ($scoreRankCounts) {
-            return [
-                'XH' => $scoreRankCounts['XH'] ?? 0,
-                'SH' => $scoreRankCounts['SH'] ?? 0,
-                'X' => $scoreRankCounts['X'] ?? 0,
-                'S' => $scoreRankCounts['S'] ?? 0,
-                'A' => $scoreRankCounts['A'] ?? 0,
             ];
         });
     }

@@ -1,5 +1,5 @@
 ###
-#    Copyright 2015-2017 ppy Pty. Ltd.
+#    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 #
 #    This file is part of osu!web. osu!web is distributed with the hope of
 #    attracting more community contributions to the core ecosystem of osu!.
@@ -18,7 +18,7 @@
 
 class @AccountEdit
   constructor: ->
-    $(document).on 'input', '.js-account-edit', @initializeUpdate
+    $(document).on 'input change', '.js-account-edit', @initializeUpdate
 
     $(document).on 'ajax:error', '.js-account-edit', @ajaxError
     $(document).on 'ajax:send', '.js-account-edit', @ajaxSaving
@@ -28,7 +28,10 @@ class @AccountEdit
   initializeUpdate: (e) =>
     form = e.currentTarget
 
+    return if form.dataset.accountEditAutoSubmit != '1'
+
     @abortUpdate form
+    @saving form
     form.debouncedUpdate ?= _.debounce @update, 1000
     form.debouncedUpdate form
 
@@ -49,10 +52,29 @@ class @AccountEdit
     el.dataset.accountEditState = ''
 
 
+  getValue: (form) ->
+    if form.dataset.accountEditType == 'array'
+      prevValue = null
+
+      value = ['']
+      for checkbox in form.querySelectorAll('input')
+        value.push(checkbox.value) if checkbox.checked
+    else
+      prevValue = form.dataset.lastValue
+
+      input = form.querySelector('.js-account-edit__input')
+      if input.type == 'checkbox'
+        value = input.checked
+      else
+        value = input.value.trim()
+
+    { value, prevValue }
+
+
   saved: (el) =>
     el.dataset.accountEditState = 'saved'
 
-    Timeout.set 3000, =>
+    el.savedTimeout = Timeout.set 3000, =>
       @clearState el
 
 
@@ -62,36 +84,33 @@ class @AccountEdit
 
   abortUpdate: (form) =>
     Timeout.clear form.savedTimeout
-    Timeout.clear form.savingTimeout
     form.updating?.abort()
     @clearState form
 
 
   update: (form) =>
-    input = form.querySelector('.js-account-edit__input')
-    value = input.value
-    prevValue = form.dataset.lastValue
+    { value, prevValue } = @getValue(form)
 
-    return if value == prevValue
+    return @clearState(form) if value == prevValue
 
     form.dataset.lastValue = value
 
-    form.savingTimeout = Timeout.set 1000, =>
-      @saving form
+    url = form.dataset.url ? laroute.route('account.update')
+    input = form.querySelector('.js-account-edit__input')
+    field = form.dataset.field ? input.name
 
-    form.updating = $.ajax laroute.route('account.update'),
+    form.updating = $.ajax url,
       method: 'PUT'
       data:
-        "#{input.name}": value
+        "#{field}": value
 
     .done =>
       @saved form
+      $(form).trigger 'ajax:success'
 
     .fail (xhr, status) =>
       return if status == 'abort'
 
       form.lastValue = prevValue
-      osu.ajaxError xhr
-
-    .always =>
-      Timeout.clear form.savingTimeout
+      @clearState form
+      $(form).trigger 'ajax:error', [xhr, status]

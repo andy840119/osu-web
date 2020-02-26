@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -33,15 +33,19 @@ class LegalController extends Controller
             case 'copyright':
                 $path = 'Legal/Copyright';
                 break;
+            case 'privacy':
+                $path = 'Legal/Privacy';
+                break;
             case 'terms':
-                $path = 'Legal/TOS';
+                $path = 'Legal/Terms';
                 break;
             default:
                 abort(404);
         }
 
-        return view('wiki.show', [
-            'page' => new Wiki\Page($path, $this->locale()),
-        ]);
+        $locale = $this->locale();
+        $page = Wiki\Page::lookupForController($path, $locale);
+
+        return ext_view('wiki.show', compact('locale', 'page'));
     }
 }

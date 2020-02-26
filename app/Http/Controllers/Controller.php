@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -21,6 +21,8 @@
 namespace App\Http\Controllers;
 
 use App;
+use App\Http\Middleware\VerifyUserAlways;
+use App\Libraries\LocaleMeta;
 use App\Models\Log;
 use Auth;
 use Carbon\Carbon;
@@ -41,8 +43,13 @@ abstract class Controller extends BaseController
      */
     public function __construct()
     {
-        view()->share('current_section', $this->section ?? '');
-        view()->share('current_action', ($this->actionPrefix ?? '').current_action());
+        view()->share('currentSection', $this->getSection());
+        view()->share('currentAction', ($this->actionPrefix ?? '').current_action());
+    }
+
+    public function getSection()
+    {
+        return $this->section ?? '';
     }
 
     protected function formatValidationErrors(Validator $validator)
@@ -61,13 +68,22 @@ abstract class Controller extends BaseController
 
     protected function login($user, $remember = false)
     {
-        Request::session()->flush();
-        Request::session()->regenerateToken();
+        cleanup_cookies();
+
+        session()->flush();
+        session()->regenerateToken();
+        session()->put('requires_verification', VerifyUserAlways::isRequired($user));
         Auth::login($user, $remember);
+        session()->migrate(true, Auth::user()->user_id);
+    }
+
+    protected function logout()
+    {
+        logout();
     }
 
     protected function locale()
     {
-        return Request::input('locale', App::getLocale());
+        return LocaleMeta::sanitizeCode(request('locale')) ?? App::getLocale();
     }
 }

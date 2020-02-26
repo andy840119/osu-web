@@ -1,5 +1,5 @@
 ###
-#    Copyright 2015-2017 ppy Pty. Ltd.
+#    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 #
 #    This file is part of osu!web. osu!web is distributed with the hope of
 #    attracting more community contributions to the core ecosystem of osu!.
@@ -107,9 +107,33 @@ $(document).on 'click', '.clickable-row', (e) ->
     row.getElementsByClassName('clickable-row-link')[0]?.click()
 
 
-# submit form on ctrl-enter.
+# submit form on ctrl-enter (or cmd-enter).
 $(document).on 'keydown', '.js-quick-submit', (e) ->
-  return unless e.ctrlKey && e.keyCode == 13
+  return unless (e.ctrlKey || e.metaKey) && e.keyCode == 13
 
   e.preventDefault()
   $(e.target).closest('form').submit()
+
+
+$(document).on 'ajax:beforeSend', (e) ->
+  # currentTarget is document
+  form = e.target
+
+  return false if form._submitting
+
+  form._submitting = true
+
+  form._ujsSubmitDisabled = []
+  for el in form.querySelectorAll('.js-ujs-submit-disable')
+    continue if el.disabled
+
+    el.blur() if el.dataset.blurOnSubmitDisable == '1'
+    el.disabled = true
+    form._ujsSubmitDisabled.push el
+
+
+$(document).on 'ajax:complete', (e) ->
+  form = e.target
+
+  form._submitting = false
+  el.disabled = false while el = form._ujsSubmitDisabled.pop()

@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -27,38 +27,56 @@ use League\Fractal;
 class BeatmapDiscussionTransformer extends Fractal\TransformerAbstract
 {
     protected $availableIncludes = [
-        'beatmap_discussion_posts',
+        'beatmap',
+        'beatmapset',
+        'posts',
         'current_user_attributes',
+        'starting_post',
+        'votes',
     ];
 
     public function transform(BeatmapDiscussion $discussion)
     {
-        if (!priv_check('BeatmapDiscussionShow', $discussion)->can()) {
+        if (!$this->isVisible($discussion)) {
             return [];
         }
 
         return [
             'id' => $discussion->id,
-            'beatmapset_discussion_id' => $discussion->beatmapset_discussion_id,
+            'beatmapset_id' => $discussion->beatmapset_id,
             'beatmap_id' => $discussion->beatmap_id,
             'user_id' => $discussion->user_id,
             'deleted_by_id' => $discussion->deleted_by_id,
             'message_type' => $discussion->message_type,
+            'parent_id' => $discussion->parent_id,
             'timestamp' => $discussion->timestamp,
             'resolved' => $discussion->resolved,
+            'can_be_resolved' => $discussion->canBeResolved(),
+            'can_grant_kudosu' => $discussion->canGrantKudosu(),
             'created_at' => json_time($discussion->created_at),
             'updated_at' => json_time($discussion->updated_at),
             'deleted_at' => json_time($discussion->deleted_at),
-            'votes' => $discussion->votesSummary(),
-            'duration' => $discussion->total_length,
+            'last_post_at' => json_time($discussion->last_post_at),
 
             'kudosu_denied' => $discussion->kudosu_denied,
         ];
     }
 
-    public function includeBeatmapDiscussionPosts(BeatmapDiscussion $discussion)
+    public function includeStartingPost(BeatmapDiscussion $discussion)
     {
-        if (!priv_check('BeatmapDiscussionShow', $discussion)->can()) {
+        if (!$this->isVisible($discussion)) {
+            return;
+        }
+
+        return $this->item(
+            $discussion->startingPost,
+            new BeatmapDiscussionPostTransformer()
+        );
+    }
+
+    public function includePosts(BeatmapDiscussion $discussion)
+    {
+        if (!$this->isVisible($discussion)) {
             return;
         }
 
@@ -68,9 +86,42 @@ class BeatmapDiscussionTransformer extends Fractal\TransformerAbstract
         );
     }
 
+    public function includeVotes(BeatmapDiscussion $discussion)
+    {
+        if (!$this->isVisible($discussion)) {
+            return;
+        }
+
+        return $this->primitive($discussion->votesSummary());
+    }
+
+    public function includeBeatmap(BeatmapDiscussion $discussion)
+    {
+        if (!$this->isVisible($discussion) || $discussion->beatmap_id === null) {
+            return;
+        }
+
+        return $this->item(
+            $discussion->beatmap,
+            new BeatmapCompactTransformer()
+        );
+    }
+
+    public function includeBeatmapset(BeatmapDiscussion $discussion)
+    {
+        if (!$this->isVisible($discussion)) {
+            return;
+        }
+
+        return $this->item(
+            $discussion->beatmapset,
+            new BeatmapsetCompactTransformer()
+        );
+    }
+
     public function includeCurrentUserAttributes(BeatmapDiscussion $discussion)
     {
-        if (!priv_check('BeatmapDiscussionShow', $discussion)->can()) {
+        if (!$this->isVisible($discussion)) {
             return;
         }
 
@@ -91,8 +142,21 @@ class BeatmapDiscussionTransformer extends Fractal\TransformerAbstract
             }
         }
 
-        return $this->item($discussion, function ($discussion) use ($score) {
-            return ['vote_score' => $score];
+        $ret = [
+            'vote_score' => $score,
+            'can_moderate_kudosu' => priv_check_user($currentUser, 'BeatmapDiscussionAllowOrDenyKudosu', $discussion)->can(),
+            'can_resolve' => priv_check_user($currentUser, 'BeatmapDiscussionResolve', $discussion)->can(),
+            'can_reopen' => priv_check_user($currentUser, 'BeatmapDiscussionReopen', $discussion)->can(),
+            'can_destroy' => priv_check_user($currentUser, 'BeatmapDiscussionDestroy', $discussion)->can(),
+        ];
+
+        return $this->item($discussion, function () use ($ret) {
+            return $ret;
         });
+    }
+
+    public function isVisible($discussion)
+    {
+        return priv_check('BeatmapDiscussionShow', $discussion)->can();
     }
 }

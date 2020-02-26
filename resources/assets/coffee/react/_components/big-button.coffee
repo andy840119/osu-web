@@ -1,5 +1,5 @@
 ###
-#    Copyright 2015-2017 ppy Pty. Ltd.
+#    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 #
 #    This file is part of osu!web. osu!web is distributed with the hope of
 #    attracting more community contributions to the core ecosystem of osu!.
@@ -16,22 +16,36 @@
 #    along with osu!web.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
-{a, button, div, span} = React.DOM
+import * as React from 'react'
+import { a, button, span, i } from 'react-dom-factories'
+import { Spinner } from 'spinner'
 el = React.createElement
 
-@BigButton = ({modifiers = [], text, icon, props = {}}) ->
-  props.className = 'btn-osu-big'
-  props.className += " btn-osu-big--#{mod}" for mod in modifiers
+export BigButton = ({modifiers = [], text, icon, props = {}, extraClasses = [], isBusy = false}) ->
+  props.className = osu.classWithModifiers('btn-osu-big', modifiers)
+  props.className += " #{klass}" for klass in extraClasses
 
-  blockElement = if props.href? then a else button
+  blockElement =
+    if props.href?
+      if props.disabled
+        span
+      else
+        a
+    else
+      button
 
   blockElement props,
-    div className: "btn-osu-big__content #{'btn-osu-big__content--center' if !text? || !icon?}",
+    span className: "btn-osu-big__content #{if !text? || !icon? then 'btn-osu-big__content--center' else ''}",
       if text?
-        div className: 'btn-osu-big__left',
+        span className: 'btn-osu-big__left',
           span className: 'btn-osu-big__text-top', text.top ? text
           if text.bottom?
             span className: 'btn-osu-big__text-bottom', text.bottom
       if icon?
-        div className: 'btn-osu-big__icon',
-          el Icon, name: icon
+        span className: 'btn-osu-big__icon',
+          # ensure no random width change when changing icon
+          span className: 'fa-fw',
+            if isBusy
+              el Spinner
+            else
+              i className: icon

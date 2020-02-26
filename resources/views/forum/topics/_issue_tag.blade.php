@@ -1,5 +1,5 @@
 {{--
-    Copyright 2015-2017 ppy Pty. Ltd.
+    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 
     This file is part of osu!web. osu!web is distributed with the hope of
     attracting more community contributions to the core ecosystem of osu!.
@@ -18,22 +18,26 @@
 <?php
     $state = $topic->hasIssueTag($issueTag);
 ?>
-<a
+<button
+    type="button"
     class="
         js-forum-topic-issue_tag_{{ $issueTag }}
         btn-circle
         btn-circle--topic-nav
+        btn-circle--purple
         {{ $state ? 'btn-circle--activated' : '' }}
     "
-    href="{{ route('forum.topics.issue-tag', [
+    data-topic-id="{{ $topic->topic_id }}"
+    title="{{ trans('forum.topics.issue_tag_'.$issueTag.'.to_'.(int) !$state) }}"
+    data-url="{{ route('forum.topics.issue-tag', [
         $topic,
         'state' => !$state,
         'issue_tag' => $issueTag,
     ]) }}"
     data-remote="1"
     data-method="post"
-    data-topic-id="{{ $topic->topic_id }}"
-    title="{{ trans('forum.topics.issue_tag_'.$issueTag.'.action-'.(int) !$state) }}"
 >
-    <i class="fa {{ issue_icon($issueTag) }}"></i>
-</a>
+    <span class="btn-circle__content">
+        <i class="{{ issue_icon($issueTag) }}"></i>
+    </span>
+</button>

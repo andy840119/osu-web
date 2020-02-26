@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -21,33 +21,56 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Jobs\RegenerateBeatmapsetCover;
+use App\Jobs\RemoveBeatmapsetCover;
 use App\Models\Beatmapset;
+use Request;
 
 class BeatmapsetsController extends Controller
 {
-    protected $section = 'admin.beatmapsets';
+    protected $section = 'admin';
+    protected $actionPrefix = 'beatmapsets-';
 
     public function covers($id)
     {
         $beatmapset = Beatmapset::findOrFail($id);
 
-        return view('admin.beatmapsets.cover', compact('beatmapset'));
+        return ext_view('admin.beatmapsets.cover', compact('beatmapset'));
+    }
+
+    public function removeCovers($id)
+    {
+        $beatmapset = Beatmapset::findOrFail($id);
+
+        $job = (new RemoveBeatmapsetCover($beatmapset))->onQueue('beatmap_high');
+        $this->dispatch($job);
+
+        return response([], 204);
     }
 
     public function regenerateCovers($id)
     {
         $beatmapset = Beatmapset::findOrFail($id);
 
-        $job = (new RegenerateBeatmapsetCover($beatmapset))->onQueue('beatmap_processor');
+        $job = (new RegenerateBeatmapsetCover($beatmapset))->onQueue('beatmap_high');
         $this->dispatch($job);
 
-        return back();
+        return response([], 204);
     }
 
     public function show($id)
     {
         $beatmapset = Beatmapset::findOrFail($id);
 
-        return view('admin.beatmapsets.show', compact('beatmapset'));
+        return ext_view('admin.beatmapsets.show', compact('beatmapset'));
+    }
+
+    public function update($id)
+    {
+        $params = get_params(Request::input(), 'beatmapset', ['discussion_enabled:bool']);
+
+        $beatmapset = Beatmapset::findOrFail($id);
+        $beatmapset->update($params);
+
+        return ujs_redirect(route('admin.beatmapsets.show', $beatmapset));
     }
 }

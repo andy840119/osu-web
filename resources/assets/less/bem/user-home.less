@@ -1,5 +1,5 @@
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -17,16 +17,13 @@
  */
 
 .user-home {
-  @title-height: 50px;
-
   .default-box-shadow();
-  .inner-shadow-top();
   display: flex;
-  background: #444;
+  background: @osu-colour-b5;
   flex-direction: column;
 
   @media @desktop {
-    padding: 0 20px;
+    padding: 0 @gutter-v2-desktop;
     margin-bottom: 10px;
     flex-direction: row;
     align-items: flex-start;
@@ -36,7 +33,7 @@
     margin: 0;
     padding: 20px 0 10px;
     font-size: @font-size--title-small-3;
-    color: @pink-light;
+    color: @osu-colour-l1;
     font-weight: 100;
   }
 
@@ -58,62 +55,58 @@
     width: 100%;
 
     @media @desktop {
-      margin-left: 10px;
       margin-right: 10px;
-      width: calc(60% ~'-' 20px);
+      width: calc(60% - 10px);
     }
   }
 
-  &__news-posts {
+  &__news-posts-group {
     .default-box-shadow();
+    display: block;
+    padding: 5px 0;
+    background-color: @osu-colour-b4;
+    margin-bottom: 5px;
 
-    &--collapsed {
-      padding: 5px 0;
-      background-color: #222;
-    }
-  }
-
-  &__news-fetch-error {
-    font-size: @font-size--normal;
-    margin-left: 40px;
-    color: #fff;
-
-    @media @desktop {
-      margin-left: 20px;
+    &--more {
+      .link-plain();
+      .link-hover({ color: white });
+      color: @osu-colour-l1;
+      padding: 20px;
+      text-align: center;
     }
   }
 
   &__news-title {
-    height: @title-height;
     margin: 0;
-    padding: 0 0 10px 20px;
+    padding: 20px 0 10px @gutter-v2;
     font-size: @font-size--large;
     font-weight: 100;
-    color: @pink-light;
+    color: @osu-colour-l1;
 
     display: flex;
     align-items: flex-end;
 
     @media @desktop {
-      padding-left: 10px;
+      padding-left: 0;
     }
   }
 
   &__right-sidebar {
-    .inner-shadow-top();
-    background-color: #333;
+    background-color: @osu-colour-b4;
     width: 100%;
     margin: 0;
     padding: 20px;
 
     @media @desktop {
-      .inner-shadow-top();
       .default-box-shadow();
       margin-left: 10px;
-      margin-right: 10px;
       margin-bottom: 10px;
-      width: calc(40% ~'-' 20px);
-      padding: @title-height 10px 10px;
+      width: calc(40% - 10px);
+      padding: 20px 10px 10px;
     }
+  }
+
+  &__status-box {
+    padding-bottom: 20px;
   }
 }

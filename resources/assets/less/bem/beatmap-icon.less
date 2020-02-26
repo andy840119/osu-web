@@ -1,5 +1,5 @@
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -17,6 +17,8 @@
  */
 
 .beatmap-icon {
+  @top: beatmap-icon;
+
   color: #fff;
   font-size: 22px;
   display: flex;
@@ -25,8 +27,9 @@
     .full-size();
     .icon-bg();
 
+    content: ' ';
     @margin: 2px;
-    @size: calc(100% ~'-' (@margin * 2));
+    @size: calc(100% - (@margin * 2));
     height: auto;
     width: @size;
     padding-bottom: @size;
@@ -46,31 +49,37 @@
 
   &--easy {
     &::before {
-      background-color: @green;
+      background-color: @diff-easy;
     }
   }
 
   &--normal {
     &::before {
-      background-color: @yellow;
+      background-color: @diff-normal;
     }
   }
 
   &--hard {
     &::before {
-      background-color: @pink;
+      background-color: @diff-hard;
     }
   }
 
   &--insane {
     &::before {
-      background-color: @purple;
+      background-color: @diff-insane;
     }
   }
 
   &--expert {
     &::before {
-      background-color: #000;
+      background-color: @diff-expert;
+    }
+  }
+
+  &--expert-plus {
+    &::before {
+      background-color: @diff-expert-plus;
     }
   }
 
@@ -78,8 +87,13 @@
     .default-box-shadow();
     .full-size();
 
+    .@{top}--with-hover:hover & {
+      .thicker-box-shadow();
+      transition: all 90ms ease-in-out; // 90ms to be in line with the tooltip (qtip2 default)
+    }
+
     @margin: 1px;
-    @size: calc(100% ~'-' (@margin * 2));
+    @size: calc(100% - (@margin * 2));
     height: auto;
     width: @size;
     padding-bottom: @size;

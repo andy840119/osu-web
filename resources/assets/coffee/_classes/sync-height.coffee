@@ -1,5 +1,5 @@
 ###
-#    Copyright 2015-2017 ppy Pty. Ltd.
+#    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 #
 #    This file is part of osu!web. osu!web is distributed with the hope of
 #    attracting more community contributions to the core ecosystem of osu!.
@@ -23,6 +23,21 @@ class @SyncHeight
 
     $(document).on 'turbolinks:load osu:page:change', @sync
     $(window).on 'throttled-resize', @sync
+
+    @observe()
+
+  observe: =>
+    config =
+      attributes: true
+      subtree: true
+
+    @observer = new MutationObserver(@onResize)
+    @observer.observe document, config
+
+
+  onResize: (mutations) =>
+    for mutation in mutations
+      return @sync() if mutation.target.tagName == 'TEXTAREA'
 
 
   sync: =>

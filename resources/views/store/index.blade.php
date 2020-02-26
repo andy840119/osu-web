@@ -1,5 +1,5 @@
 {{--
-    Copyright 2015-2017 ppy Pty. Ltd.
+    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 
     This file is part of osu!web. osu!web is distributed with the hope of
     attracting more community contributions to the core ecosystem of osu!.
@@ -15,16 +15,16 @@
     You should have received a copy of the GNU Affero General Public License
     along with osu!web.  If not, see <http://www.gnu.org/licenses/>.
 --}}
-@extends("master")
+@extends('store/layout')
 
-@section("content")
-    @include("store.header")
+@section('content')
+    @include('store.header')
 
-    <div class="osu-layout__row osu-layout__row--with-gutter">
-        <div class="osu-layout__col-container">
+    <div class="osu-page">
+        <div class="store-products">
             @foreach($products as $product)
                 @include('store._product', ['product' => $product])
             @endforeach
         </div>
     </div>
-@stop
+@endsection

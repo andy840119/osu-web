@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -20,12 +20,35 @@
 
 namespace App\Models;
 
+/**
+ * @property string|null $build
+ * @property string $category
+ * @property int $changelog_id
+ * @property string $checksum
+ * @property \Carbon\Carbon $date
+ * @property Build $gameBuild
+ * @property bool $major
+ * @property string $message
+ * @property string $prefix
+ * @property bool $private
+ * @property int|null $stream_id
+ * @property int|null $thread_id
+ * @property int $tweet
+ * @property UpdateStream $updateStream
+ * @property string|null $url
+ * @property User $user
+ * @property int $user_id
+ */
 class Changelog extends Model
 {
     public $timestamps = false;
     protected $table = 'osu_changelog';
     protected $primaryKey = 'changelog_id';
-    protected $guarded = [];
+
+    protected $casts = [
+        'private' => 'boolean',
+        'major' => 'boolean',
+    ];
 
     protected $dates = [
         'date',
@@ -37,28 +60,28 @@ class Changelog extends Model
         'misc' => '?',
     ];
 
-    // Changelog::all()->listing($offset)->get();
-    // Changelog::with('user', function($changelog) {
-    //
-    // }
-
-    public function scopeListing($query, $offset = 20)
-    {
-        $limit = config('osu.changelog.max', 20);
-
-        return $query
-            ->where('private', '=', 0)
-            ->take($limit)
-            ->skip($offset)
-            ->orderBy('changelog_id', 'desc');
-    }
-
     public function scopeDefault($query)
     {
         return $query
             ->where('private', 0)
             ->orderBy('date', 'desc')
             ->orderBy('major', 'desc');
+    }
+
+    public function scopeListing($query, $offset = 20)
+    {
+        $limit = config('osu.changelog.max', 20);
+
+        return $query
+            ->where('private', 0)
+            ->take($limit)
+            ->skip($offset)
+            ->orderBy('changelog_id', 'desc');
+    }
+
+    public function scopeVisibleOnBuilds($query)
+    {
+        return $query->whereNotIn('category', ['Code', 'Web']);
     }
 
     public function user()
@@ -68,7 +91,7 @@ class Changelog extends Model
 
     public function updateStream()
     {
-        return $this->hasOne(UpdateStream::class, 'stream_id', 'stream_id');
+        return $this->belongsTo(UpdateStream::class, 'stream_id');
     }
 
     public function gameBuild()

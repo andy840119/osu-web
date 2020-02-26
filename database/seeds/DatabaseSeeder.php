@@ -15,6 +15,9 @@ class DatabaseSeeder extends Seeder
             // Miscellaneous Data (e.g. counts)
             $this->call(MiscSeeder::class);
 
+            // Countries
+            $this->call(CountrySeeder::class);
+
             // Users, Stats, Ranks
             $this->call(UserSeeder::class);
 
@@ -36,8 +39,11 @@ class DatabaseSeeder extends Seeder
             // Users Profile Data (Favourite maps, First place ranks, Playcounts)
             $this->call(UserProfileSeeder::class);
 
-            //Store Products
+            // Store Products
             $this->call(ProductSeeder::class);
+
+            // Changelog data (base update streams, builds, changes, build histories)
+            $this->call(ChangelogSeeder::class);
         } catch (ErrorException $er) {
             $this->command->error($er->getMessage());
         } catch (Exception $ex) {

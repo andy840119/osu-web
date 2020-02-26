@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -19,66 +19,141 @@
  */
 
 return [
+    'availability' => [
+        'disabled' => 'Nie możesz pobrać tej beatmapy.',
+        'parts-removed' => 'Ta beatmapa została usunięta za prośbą twórcy materiałów w niej użytych.',
+        'more-info' => 'Kliknij tutaj, aby dowiedzieć się więcej.',
+    ],
+
+    'index' => [
+        'title' => 'Lista beatmap',
+        'guest_title' => 'Beatmapy',
+    ],
+
     'show' => [
+        'discussion' => 'Dyskusja',
+
         'details' => [
-            'made-by' => 'stworzony przez ',
-            'submitted' => 'dodana ',
-            'ranked' => 'rankingowa od ',
-            'logged-out' => 'Musisz się zalogować, aby pobierać beatmapy!',
+            'favourite' => 'Dodaj do ulubionych',
+            'logged-out' => 'Zaloguj się, aby zacząć pobierać beatmapy!',
+            'mapped_by' => 'autorstwa :mapper',
+            'unfavourite' => 'Usuń z ulubionych',
+            'updated_timeago' => 'ostatnio zaktualizowana :timeago',
+
             'download' => [
-                '_' => 'pobierz',
-                'video' => 'z wideo',
-                'no-video' => 'bez wideo',
+                '_' => 'Pobierz',
                 'direct' => 'osu!direct',
+                'no-video' => 'bez wideo',
+                'video' => 'z wideo',
+            ],
+
+            'login_required' => [
+                'bottom' => 'aby uzyskać dostęp do pozostałych funkcji',
+                'top' => 'Zaloguj się',
             ],
         ],
-        'stats' => [
-            //this is left intentionally in english, you can't translate these so it sounds normal
-            'cs' => 'Circle Size',
-            'cs-mania' => 'Key Amount',
-            'drain' => 'HP Drain',
-            'accuracy' => 'Accuracy',
-            'ar' => 'Approach Rate',
-            'stars' => 'Trudność',
-            'total_length' => 'Długość',
-            'bpm' => 'BPM',
-            'count_circles' => 'Ilość kółek',
-            'count_sliders' => 'Ilość sliderów',
+
+        'favourites' => [
+            'limit_reached' => 'Masz za dużo ulubionych beatmap! Usuń kilka, jeżeli chcesz kontynuować.',
         ],
+
+        'hype' => [
+            'action' => 'Nagłośnij tę beatmapę, aby pomóc jej w uzyskaniu statusu <strong>rankingowego</strong>.',
+
+            'current' => [
+                '_' => 'Ta beatmapa jest obecnie :status.',
+
+                'status' => [
+                    'pending' => 'oczekująca',
+                    'qualified' => 'zakwalifikowana',
+                    'wip' => 'rozwijana',
+                ],
+            ],
+
+            'disqualify' => [
+                '_' => 'Jeżeli znajdziesz problem z tą beatmapą, zdyskwalifikuj ją :link.',
+                'button_title' => 'Zdyskwalifikuj beatmapę.',
+            ],
+
+            'report' => [
+                '_' => 'Jeżeli znajdziesz problem z tą beatmapą, zgłoś go :link, aby powiadomić zespół.',
+                'button' => 'Zgłoś problem',
+                'button_title' => 'Zgłoś problem z zakwalifikowaną beatmapą.',
+                'link' => 'tutaj',
+            ],
+        ],
+
         'info' => [
-            'success-rate' => 'Wskaźnik sukcesu',
-            'points-of-failure' => 'Wykres',
-
             'description' => 'Opis',
-
+            'genre' => 'Gatunek',
+            'language' => 'Język',
+            'no_scores' => 'Dane są nadal ładowane...',
+            'points-of-failure' => 'Wykres porażek',
             'source' => 'Źródło',
+            'success-rate' => 'Wskaźnik ukończonych zagrań',
             'tags' => 'Tagi',
+            'unranked' => 'Nierankingowa beatmapa',
         ],
+
         'scoreboard' => [
-            'achieved' => 'osiągnięty :when',
+            'achieved' => 'osiągnięte :when',
             'country' => 'Ranking krajowy',
             'friend' => 'Ranking znajomych',
             'global' => 'Ranking globalny',
-            'supporter-link' => 'Kliknij <a href=":link">tutaj</a>, aby zobaczyć, co jeszcze otrzymujesz w zamian za bycie supporterem!',
-            'supporter-only' => 'Musisz być supporterem, aby uzyskać dostęp do rankingu krajowego i znajomych!',
-            'title' => 'Tablica wyników',
+            'supporter-link' => 'Kliknij <a href=":link">tutaj</a>, aby zobaczyć, jakie jeszcze funkcje otrzymasz w zamian za zakup statusu donatora!',
+            'supporter-only' => 'Musisz posiadać status donatora, aby uzyskać dostęp do rankingu krajowego i znajomych!',
+            'title' => 'Tabela wyników',
 
-            'list' => [
+            'headers' => [
                 'accuracy' => 'Celność',
-                'player-header' => 'Gracz',
-                'rank-header' => 'Miejsce',
+                'combo' => 'Combo',
+                'miss' => 'Pudła',
+                'mods' => 'Modyfikatory',
+                'player' => 'Gracz',
+                'pp' => 'pp',
+                'rank' => 'Pozycja',
+                'score_total' => 'Wynik',
                 'score' => 'Wynik',
             ],
+
             'no_scores' => [
-                'country' => 'Nikt z twojego kraju nie ustanowił tutaj wyniku!',
-                'friend' => 'Żaden z twoich znajomych nie ma tutaj wyniku!',
-                'global' => 'Brak wyników. Może powinieneś jakieś zdobyć?',
+                'country' => 'Nikt z twojego kraju nie ustanowił jeszcze wyniku na tej beatmapie!',
+                'friend' => 'Żaden z twoich znajomych nie ustanowił jeszcze wyniku na tej beatmapie!',
+                'global' => 'Brak wyników. Może czas jakieś ustanowić?',
                 'loading' => 'Ładowanie wyników...',
+                'unranked' => 'Nierankingowa beatmapa.',
             ],
-            'stats' => [
-                'accuracy' => 'Celność',
-                'score' => 'Wynik',
+            'score' => [
+                'first' => 'Najlepszy wynik',
+                'own' => 'Twój wynik',
             ],
+        ],
+
+        'stats' => [
+            'cs' => 'Wielkość kółek',
+            'cs-mania' => 'Liczba klawiszy',
+            'drain' => 'Spadek HP',
+            'accuracy' => 'Precyzja',
+            'ar' => 'Prędkość otoczki',
+            'stars' => 'Trudność',
+            'total_length' => 'Długość (długość aktywnej gry: :hit_length)',
+            'bpm' => 'BPM',
+            'count_circles' => 'Liczba kółek',
+            'count_sliders' => 'Liczba sliderów',
+            'user-rating' => 'Oceny użytkowników',
+            'rating-spread' => 'Wykres ocen',
+            'nominations' => 'Nominacje',
+            'playcount' => 'Liczba zagrań',
+        ],
+
+        'status' => [
+            'ranked' => 'Rankingowa',
+            'approved' => 'Zatwierdzona',
+            'loved' => 'Ulubiona społeczności',
+            'qualified' => 'Zakwalifikowana',
+            'wip' => 'Obecnie rozwijana',
+            'pending' => 'Oczekująca',
+            'graveyard' => 'Porzucona',
         ],
     ],
 ];

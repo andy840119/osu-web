@@ -1,5 +1,5 @@
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -21,8 +21,12 @@
 
   @_content-height: 30px;
   @_main-height: (@_content-height + 20px);
+  @_seek-bar-height: 10px;
+  @_seek-bar-height-desktop: 5px;
+  @_seek-bar-height-desktop-hover: 15px;
+  @_seek-tooltip-arrow-height: 10px;
   width: 100%;
-  background-image: linear-gradient(to top, @gray-dark @_main-height, transparent @_main-height);
+  background-color: @osu-colour-d4;
 
   height: @_main-height;
 
@@ -87,13 +91,12 @@
   }
 
   &__item {
-    .default-border-radius;
-    color: #fff;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 5px;
+    .reset-input();
+    .center-content();
+    color: @osu-colour-c1;
+    margin: 0 3px;
     border: 2px solid transparent;
+    border-radius: 10000px;
 
     font-size: 12px;
     @media @desktop {
@@ -102,35 +105,43 @@
 
     ._button-hover() {
       background-color: #111;
-      color: #fff;
+      color: @osu-colour-c1;
       text-decoration: none;
     }
 
     &--button {
+      .default-text-shadow();
       width: @_content-height;
       height: @_content-height;
+      display: inline-block;
+      background-color: @osu-colour-l4;
+      font-size: @font-size--small;
 
       &:focus,
       &:hover,
       &:active {
-        ._button-hover;
+        ._button-hover();
+        background-color: @osu-colour-l3;
+      }
+
+      @media @desktop {
+        font-size: @font-size--small;
       }
     }
 
     &--counter {
-      ._button-hover;
-    }
-
-    &--main {
-      margin: 0 2.5px;
-      @media @desktop {
-        margin: 0 10px;
-      }
+      ._button-hover();
     }
 
     &--focus {
       border-color: @yellow-darker;
     }
+  }
+
+  &__item-content {
+    .center-content();
+    width: 100%;
+    height: 100%;
   }
 
   &__seek-bar {
@@ -141,19 +152,11 @@
     cursor: pointer;
     backface-visibility: hidden;
 
-    height: 10px;
-    @media @desktop {
-      height: 5px;
-    }
+    height: @_seek-bar-height;
+    background-color: @osu-colour-h1;
 
-    &::before {
-      content: ' ';
-      position: absolute;
-      left: 0;
-      top: 100%;
-      height: @_main-height;
-      width: 100%;
-      background-color: @gray-darker;
+    @media @desktop {
+      height: @_seek-bar-height-desktop;
     }
 
     // easier targeting
@@ -169,7 +172,7 @@
 
     .@{_top}:hover & {
       @media @desktop {
-        height: 15px;
+        height: @_seek-bar-height-desktop-hover;
       }
     }
 
@@ -204,7 +207,7 @@
 
   &__seek-tooltip {
     position: absolute;
-    bottom: (@_main-height + 30px);
+    bottom: (@_main-height + @_seek-bar-height-desktop-hover + @_seek-tooltip-arrow-height);
 
     display: flex;
     width: 0;
@@ -226,7 +229,7 @@
       left: 50%;
       margin-left: -8px;
 
-      border-width: 10px 8px 0 8px;
+      border-width: @_seek-tooltip-arrow-height 8px 0 8px;
       border-style: solid;
       border-color: transparent;
       border-top-color: @gray-dark;

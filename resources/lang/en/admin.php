@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -19,9 +19,16 @@
  */
 
 return [
-
     'beatmapsets' => [
+        'covers' => [
+            'regenerate' => 'Regenerate',
+            'regenerating' => 'Regenerating...',
+            'remove' => 'Remove',
+            'removing' => 'Removing...',
+            'title' => 'Beatmapset covers',
+        ],
         'show' => [
+            'covers' => 'Manage Beatmapset Covers',
             'discussion' => [
                 '_' => 'Modding v2',
                 'activate' => 'activate',
@@ -64,9 +71,8 @@ return [
 
     'pages' => [
         'root' => [
-            'title' => 'Admin Console Thingy',
-
             'sections' => [
+                'beatmapsets' => 'Beatmapsets',
                 'forum' => 'Forum',
                 'general' => 'General',
                 'store' => 'Store',
@@ -79,6 +85,13 @@ return [
             'index' => [
                 'title' => 'Order Listing',
             ],
+        ],
+    ],
+
+    'users' => [
+        'restricted_banner' => [
+            'title' => 'This user is currently restricted.',
+            'message' => '(only admins can see this)',
         ],
     ],
 

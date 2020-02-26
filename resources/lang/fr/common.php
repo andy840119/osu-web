@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -20,23 +20,95 @@
 
 return [
     'confirmation' => 'Êtes-vous sûr?',
+    'confirmation_unsaved' => 'Les modifications non enregistrées seront perdues. Êtes-vous sûr ?',
     'saved' => 'Sauvegardé',
 
+    'array_and' => [
+        'words_connector' => ', ',
+        'two_words_connector' => ' et ',
+        'last_word_connector' => ' et ',
+    ],
+
+    'badges' => [
+        'new' => 'NOUVEAU',
+    ],
+
     'buttons' => [
+        'admin' => 'Admin',
+        'authorise' => 'Autoriser',
+        'back_to_previous' => 'Retour à la position précédente',
+        'back_to_top' => 'Retour en haut',
         'cancel' => 'Annuler',
+        'change' => 'changer',
+        'click_to_copy' => 'cliquez pour copier dans le presse-papiers',
+        'click_to_copy_copied' => 'copié dans le presse-papiers !',
+        'close' => 'Fermer',
+        'collapse' => 'réduire',
         'delete' => 'Supprimer',
+        'edit' => 'Éditer',
+        'expand' => 'agrandir',
+        'hide' => 'masquer',
         'permalink' => 'permalien',
+        'pin' => 'épingler',
         'post' => 'Poster',
         'reply' => 'Répondre',
+        'reply_reopen' => 'Répondre et rouvrir',
+        'reply_resolve' => 'Répondre et fermer',
         'reset' => 'Réinitialiser',
+        'restore' => 'Restaurer',
         'save' => 'Sauvegarder',
         'saving' => 'Sauvegarde...',
+        'search' => 'Rechercher',
+        'see_more' => 'voir plus',
+        'show' => 'afficher',
+        'show_deleted' => 'Afficher supprimé',
+        'show_less' => '',
         'show_more' => 'Plus de résultats',
-        'delete' => 'Supprimer',
+        'show_more_options' => 'afficher plus d’options',
+        'unpin' => 'désépingler',
+        'update' => 'Modifier',
+        'upload_image' => 'mettre en ligne une image',
+
+        'watch' => [
+            'to_0' => 'Ne plus suivre',
+            'to_1' => 'Suivre',
+        ],
     ],
 
     'count' => [
+        'badges' => ':count badge|:count badges',
+        'days' => ':count jour|:count jours',
+        'hour_short_unit' => 'h|h',
+        'hours' => ':count heure|:count heures',
         'item' => ':count objet|:count objets',
+        'minute_short_unit' => 'min|mins',
+        'minutes' => ':count minute|:count minutes',
+        'months' => ':count mois|:count mois',
+        'notifications' => '',
+        'plus_others' => '+ :count_delimited autre !|+ :count_delimited autres !',
+        'post' => ':count_delimited discussion|:count_delimited discussions',
+        'second_short_unit' => 'sec|secs',
+        'star_priority' => ':count_delimited priorité étoile|:count_delimited priorité étoiles',
+        'update' => ':count_delimited mise à jour|:count_delimited mises à jour',
+        'view' => ':count_delimited vue|:count_delimited vues',
+        'years' => ':count an|:count ans',
+    ],
+
+    'countdown' => [
+        'days' => 'jours',
+        'hours' => 'heures',
+        'minutes' => 'minutes',
+        'seconds' => 'secondes',
+    ],
+
+    'datetime' => [
+        'year_month' => [
+            'moment' => 'MMMM YYYY',
+            'php' => 'MMMM y',
+        ],
+        'year_month_short' => [
+            'moment' => 'MMM YYYY',
+        ],
     ],
 
     'device' => [
@@ -48,6 +120,10 @@ return [
 
     'dropzone' => [
         'target' => 'déplacez ici pour uploader',
+    ],
+
+    'input' => [
+        'search' => 'rechercher...',
     ],
 
     'pagination' => [
@@ -73,5 +149,10 @@ return [
 
     'title' => [
         'notice' => 'Information',
+    ],
+
+    'wrong_user' => [
+        '_' => 'Vous êtes connecté en tant que :user. :logout_link.',
+        'logout_link' => 'Cliquez ici pour vous connecter en tant qu\'utilisateur différent',
     ],
 ];

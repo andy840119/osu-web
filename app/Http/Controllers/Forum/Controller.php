@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -21,19 +21,32 @@
 namespace App\Http\Controllers\Forum;
 
 use App\Http\Controllers\Controller as BaseController;
+use App\Models\Forum\Forum;
+use App\Models\Forum\Post;
+use App\Models\Forum\Topic;
 use App\Models\Log;
 
 abstract class Controller extends BaseController
 {
     public function logModerate($operation, $data, $object)
     {
+        if ($object instanceof Forum) {
+            $forumId = $object->getKey();
+        } elseif ($object instanceof Topic) {
+            $forumId = $object->forum_id;
+            $topicId = $object->getKey();
+        } elseif ($object instanceof Post) {
+            $forumId = $object->topic()->withTrashed()->value('forum_id');
+            $topicId = $object->topic_id;
+        }
+
         $this->log([
             'log_type' => Log::LOG_FORUM_MOD,
             'log_operation' => $operation,
             'log_data' => $data,
 
-            'topic_id' => $object->topic_id,
-            'forum_id' => $object->forum_id,
+            'topic_id' => $topicId ?? null,
+            'forum_id' => $forumId ?? null,
         ]);
     }
 }

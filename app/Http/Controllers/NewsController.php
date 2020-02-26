@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -20,8 +20,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\News;
-use Request;
+use App\Libraries\CommentBundle;
+use App\Models\NewsPost;
 
 class NewsController extends Controller
 {
@@ -30,30 +30,61 @@ class NewsController extends Controller
 
     public function index()
     {
-        $page = get_int(Request::input('page'));
-        $limit = get_int(Request::input('limit'));
+        $format = request('format');
+        $isFeed = $format === 'atom' || $format === 'rss';
+        $limit = $isFeed ? 20 : 12;
 
-        return view('news.index', [
-            'posts' => News\Index::all($page, $limit),
-        ]);
+        $search = NewsPost::search(array_merge(['limit' => $limit], request()->all()));
+
+        $posts = $search['query']->get();
+
+        if ($isFeed) {
+            return ext_view("news.index-{$format}", compact('posts'), $format);
+        }
+
+        $postsJson = [
+            'news_posts' => json_collection($posts, 'NewsPost', ['preview']),
+            'search' => $search['params'],
+        ];
+
+        if (is_json_request()) {
+            return $postsJson;
+        } else {
+            $atom = [
+                'url' => route('news.index', ['format' => 'atom']),
+                'title' => 'osu!news Feed',
+            ];
+
+            return ext_view('news.index', compact('postsJson', 'atom'));
+        }
     }
 
-    public function show($id)
+    public function show($slug)
     {
-        $post = (new News\Post($id));
+        if (request('key') === 'id') {
+            $post = NewsPost::findOrFail($slug);
 
-        if ($post->page() === null) {
+            return ujs_redirect(route('news.show', $post->slug));
+        }
+
+        $post = NewsPost::lookup($slug)->sync();
+
+        if (!$post->isVisible()) {
             abort(404);
         }
 
-        return view('news.show', compact('post'));
+        return ext_view('news.show', [
+            'commentBundle' => CommentBundle::forEmbed($post),
+            'post' => $post,
+            'postJson' => json_item($post, 'NewsPost', ['content', 'navigation']),
+        ]);
     }
 
     public function store()
     {
         priv_check('NewsIndexUpdate')->ensureCan();
 
-        News\Index::cacheClear();
+        NewsPost::syncAll();
 
         return ['message' => trans('news.store.ok')];
     }
@@ -62,7 +93,7 @@ class NewsController extends Controller
     {
         priv_check('NewsPostUpdate')->ensureCan();
 
-        (new News\Post($id))->cacheClear();
+        NewsPost::findOrFail($id)->sync(true);
 
         return ['message' => trans('news.update.ok')];
     }

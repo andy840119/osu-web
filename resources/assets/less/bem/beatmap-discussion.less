@@ -1,5 +1,5 @@
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -22,18 +22,53 @@
   display: flex;
 
   &--deleted {
-    opacity: 0.75;
+    opacity: 0.5;
+  }
+
+  &--preview {
+    flex-grow: 1;
+    overflow: hidden;
+  }
+
+  &__compact,
+  &__full {
+    flex: 1;
+  }
+
+  &__compact {
+    display: none;
+
+    @media @mobile {
+      display: block;
+    }
+
+    .@{_top}--review & {
+      display: block;
+    }
+  }
+
+  &__full {
+    display: block;
+
+    @media @mobile {
+      display: none;
+    }
+
+    .@{_top}--review & {
+      display: none;
+    }
   }
 
   &__actions {
-    flex: none;
-
     display: flex;
-
-    height: @beatmap-discussion--avatar-size;
-    margin: 10px;
-    margin-right: 0;
+    align-items: center;
   }
+
+  &__actions-container {
+    display: flex;
+    align-items: center;
+    height: 40px;
+    }
 
   &__action {
     .reset-input();
@@ -42,9 +77,10 @@
     &--with-line {
       &::before {
         .full-size();
+        content: ' ';
         width: 1px;
         right: 100%;
-        background-image: linear-gradient(to bottom, transparent, #ccc 50%, transparent);
+        background-image: linear-gradient(to bottom, osu-hsla(@osu-colour-b1, 0), @osu-colour-b1 50%, osu-hsla(@osu-colour-b1, 0));
       }
     }
   }
@@ -58,11 +94,29 @@
     margin: 5px 0;
     display: flex;
     flex-direction: column;
-    background-color: #fff;
+    background-color: @osu-colour-b4;
+    overflow: hidden;
 
     .@{_top}--highlighted & {
       .thicker-box-shadow();
+      &::after {
+        .full-size();
+        content: ' ';
+        background: fade(white, 15%);
+        pointer-events: none;
+        opacity: 0.5;
+        animation: flash .5s;
+        @keyframes flash {
+          0% { opacity: 1; }
+          100% { opacity: 0.5; }
+        }
+      }
     }
+  }
+
+  &__discussion-header {
+    padding-top: 10px;
+    padding-left: 15px;
   }
 
   &__expanded {
@@ -80,8 +134,19 @@
     border-radius: @border-radius-base 0 0 @border-radius-base;
 
     &--resolved {
-      background-color: @green;
+      background-color: @osu-colour-lime-3;
     }
+  }
+
+  &__link-to-parent {
+    margin: 10px;
+    margin-right: 15px;
+
+    color: @osu-colour-f1;
+    .link-hover({
+      color: @osu-colour-c1;
+    });
+    .link-plain();
   }
 
   &__replies {
@@ -99,13 +164,38 @@
     margin: 5px 0;
   }
 
+  &__review-wrapper {
+    background: @osu-colour-b3;
+  }
+
   &__timestamp {
     flex: none;
-    width: @beatmap-discussion--timestamp-width;
+
+    // hopefully enough for type and resolve status icons.
+    width: 50px;
+
+    .@{_top}--timeline &, .@{_top}--preview & {
+      // with timestamp, timeline's line and dot.
+      width: 110px;
+    }
   }
 
   &__top {
     display: flex;
     justify-content: space-between;
+    background-color: @osu-colour-b3;
+
+    .@{_top}--unread & {
+      &::before {
+        .full-size();
+        content: ' ';
+        background-color: @blue-darker;
+        width: 5px;
+      }
+    }
+
+    .@{_top}--review & {
+      border-top: 2px solid var(--group-colour, transparent);
+    }
   }
 }

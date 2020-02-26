@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -31,15 +31,16 @@ class ArtistsController extends Controller
 
     public function index()
     {
-        $artists = Artist::with('label')->withCount('tracks');
+        $artists = Artist::with('label')->withCount('tracks')->orderBy('name', 'asc');
         $user = Auth::user();
 
         if ($user === null || !$user->isAdmin()) {
             $artists->where('visible', true);
         }
 
-        return view('artists.index')
-            ->with('artists', $artists->get());
+        return ext_view('artists.index', [
+            'artists' => $artists->get(),
+        ]);
     }
 
     public function show($id)
@@ -53,44 +54,63 @@ class ArtistsController extends Controller
 
         $albums = $artist->albums()
             ->where('visible', true)
+            ->orderBy('id', 'desc')
             ->with(['tracks' => function ($query) {
                 $query->orderBy('display_order', 'ASC');
-            }])->get();
+            }])
+            ->with('tracks.artist')
+            ->get();
 
-        $tracks = $artist->tracks()->whereNull('album_id')->orderBy('display_order', 'ASC NULLS LAST')->get();
+        $tracks = $artist
+            ->tracks()
+            ->whereNull('album_id')
+            ->with('artist')
+            ->orderBy('id', 'desc')
+            ->get();
 
         $images = [
             'header_url' => $artist->header_url,
             'cover_url' => $artist->cover_url,
         ];
 
-        // should probably move services to a separate model if the number increases further
+        // should probably move services to a separate model if the number increases further (HA HA HA)
         $links = [];
-        foreach (['soundcloud', 'twitter', 'facebook', 'bandcamp', 'patreon'] as $service) {
-            if ($artist->$service) {
-                $links[] = [
-                    'title' => ucwords($service),
-                    'url' => $artist->$service,
-                    'icon' => $service === 'patreon' ? "extra-social-$service" : $service,
-                    'class' => $service,
-                ];
-            }
+
+        if ($artist->user_id) {
+            $links[] = [
+                'title' => trans('artist.links.osu'),
+                'url' => route('users.show', $artist->user_id),
+                'icon' => 'fas fa-user',
+                'class' => 'osu',
+            ];
         }
 
         if ($artist->website) {
             $links[] = [
                 'title' => trans('artist.links.site'),
                 'url' => $artist->website,
-                'icon' => 'globe',
+                'icon' => 'fas fa-link',
                 'class' => 'website',
             ];
         }
 
-        return view('artists.show')
-            ->with('artist', $artist)
-            ->with('links', $links)
-            ->with('albums', json_collection($albums, new ArtistAlbumTransformer, ['tracks']))
-            ->with('tracks', json_collection($tracks, new ArtistTrackTransformer))
-            ->with('images', $images);
+        foreach (['twitter', 'facebook', 'spotify', 'bandcamp', 'patreon', 'soundcloud', 'youtube'] as $service) {
+            if ($artist->$service) {
+                $links[] = [
+                    'title' => $service === 'youtube' ? 'YouTube' : ucwords($service),
+                    'url' => $artist->$service,
+                    'icon' => "fab fa-{$service}",
+                    'class' => $service,
+                ];
+            }
+        }
+
+        return ext_view('artists.show', [
+            'artist' => $artist,
+            'links' => $links,
+            'albums' => json_collection($albums, new ArtistAlbumTransformer, ['tracks']),
+            'tracks' => json_collection($tracks, new ArtistTrackTransformer),
+            'images' => $images,
+        ]);
     }
 }

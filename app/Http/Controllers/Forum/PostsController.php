@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -20,9 +20,10 @@
 
 namespace App\Http\Controllers\Forum;
 
+use App\Exceptions\ModelNotSavedException;
 use App\Models\Forum\Post;
-use App\Models\Forum\Topic;
 use Auth;
+use DB;
 use Request;
 
 class PostsController extends Controller
@@ -41,93 +42,113 @@ class PostsController extends Controller
 
     public function destroy($id)
     {
-        $post = Post::showDeleted(priv_check('ForumTopicModerate')->can())
-            ->findOrFail($id);
+        $post = Post::withTrashed()->findOrFail($id);
 
         priv_check('ForumPostDelete', $post)->ensureCan();
 
-        if ((Auth::user()->user_id ?? null) !== $post->poster_id) {
-            $this->logModerate(
-                'LOG_DELETE_POST',
-                [$post->topic->topic_title],
-                $post
-            );
+        $topic = $post->topic()->withTrashed()->first();
+
+        try {
+            DB::transaction(function () use ($post, $topic) {
+                if ((Auth::user()->user_id ?? null) !== $post->poster_id) {
+                    $this->logModerate(
+                        'LOG_DELETE_POST',
+                        [$topic->topic_title],
+                        $post
+                    );
+                }
+
+                $topic->removePostOrExplode($post);
+            });
+        } catch (ModelNotSavedException $e) {
+            return error_popup($e->getMessage());
         }
 
-        $post->topic->removePost($post, Auth::user());
-
-        if ($post->topic->trashed()) {
-            $redirect = route('forum.forums.show', $post->forum);
+        if ($topic->trashed()) {
+            $redirect = route('forum.forums.show', $topic->forum);
 
             return ujs_redirect($redirect);
         }
 
-        return js_view('forum.topics.delete', compact('post'));
+        return ext_view('forum.topics.delete', compact('post'), 'js');
     }
 
     public function restore($id)
     {
-        priv_check('ForumTopicModerate')->ensureCan();
-
         $post = Post::withTrashed()->findOrFail($id);
+
+        priv_check('ForumModerate', $post->forum)->ensureCan();
+
         $topic = $post->topic()->withTrashed()->first();
 
-        if ((Auth::user()->user_id ?? null) !== $post->poster_id) {
-            $this->logModerate(
-                'LOG_RESTORE_POST',
-                [$topic->topic_title],
-                $post
-            );
-        }
+        $this->logModerate(
+            'LOG_RESTORE_POST',
+            [$topic->topic_title],
+            $post
+        );
 
-        $topic->restorePost($post, Auth::user());
+        $topic->restorePost($post);
 
-        return js_view('forum.topics.restore', compact('post'));
+        return ext_view('forum.topics.restore', compact('post'), 'js');
     }
 
     public function edit($id)
     {
-        $post = Post::findOrFail($id);
+        $post = Post::withTrashed()->findOrFail($id);
 
         priv_check('ForumPostEdit', $post)->ensureCan();
 
-        return view('forum.topics._post_edit', compact('post'));
+        return ext_view('forum.topics._post_edit', compact('post'));
     }
 
     public function update($id)
     {
-        $post = Post::findOrFail($id);
+        $post = Post::withTrashed()->findOrFail($id);
 
         priv_check('ForumPostEdit', $post)->ensureCan();
 
-        if ((Auth::user()->user_id ?? null) !== $post->poster_id) {
-            $this->logModerate(
-                'LOG_POST_EDITED',
-                [
-                    $post->topic->topic_title,
-                    $post->user->username,
-                ],
-                $post
-            );
-        }
+        try {
+            DB::transaction(function () use ($post) {
+                $userId = Auth::user() === null ? null : Auth::user()->getKey();
 
-        $body = Request::input('body');
-        if ($body !== '') {
-            $post->edit($body, Auth::user());
+                if ($userId !== $post->poster_id) {
+                    $this->logModerate(
+                        'LOG_POST_EDITED',
+                        [
+                            $post->topic->topic_title,
+                            $post->user->username,
+                        ],
+                        $post
+                    );
+                }
+
+                $post
+                    ->fill([
+                        'post_text' => request('body'),
+                        'post_edit_user' => $userId,
+                    ])
+                    ->saveOrExplode();
+            });
+        } catch (ModelNotSavedException $e) {
+            return error_popup($e->getMessage());
         }
 
         $posts = collect([$post->fresh()]);
         $topic = $post->topic;
         $firstPostPosition = $topic->postPosition($post->post_id);
 
-        return view('forum.topics._posts', compact('posts', 'firstPostPosition', 'topic'));
+        return ext_view('forum.topics._posts', compact('posts', 'firstPostPosition', 'topic'));
     }
 
     public function raw($id)
     {
-        $post = Post::findOrFail($id);
+        $post = Post::withTrashed()->findOrFail($id);
 
-        if ($post->forum === null) {
+        if ($post->trashed()) {
+            priv_check('ForumModerate', $post->forum)->ensureCan();
+        }
+
+        if ($post->forum === null || $post->topic === null) {
             abort(404);
         }
 
@@ -144,9 +165,13 @@ class PostsController extends Controller
 
     public function show($id)
     {
-        $post = Post::findOrFail($id);
+        $post = Post::withTrashed()->findOrFail($id);
 
-        if ($post->forum === null) {
+        if ($post->trashed()) {
+            priv_check('ForumModerate', $post->forum)->ensureCan();
+        }
+
+        if ($post->forum === null || $post->topic === null) {
             abort(404);
         }
 

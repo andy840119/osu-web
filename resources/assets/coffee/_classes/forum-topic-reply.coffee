@@ -1,5 +1,5 @@
 ###
-#    Copyright 2015-2017 ppy Pty. Ltd.
+#    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 #
 #    This file is part of osu!web. osu!web is distributed with the hope of
 #    attracting more community contributions to the core ecosystem of osu!.
@@ -17,22 +17,22 @@
 ###
 
 class @ForumTopicReply
-  constructor: (@forum, @stickyFooter) ->
+  constructor: ({ @forum, @forumPostPreview, @stickyFooter }) ->
     @container = document.getElementsByClassName('js-forum-topic-reply--container')
     @box = document.getElementsByClassName('js-forum-topic-reply')
+    @block = document.getElementsByClassName('js-forum-topic-reply--block')
     @input = document.getElementsByClassName('js-forum-topic-reply--input')
-    @closeButton = document.getElementsByClassName('js-forum-topic-reply--close')
+    @toggleButtons = document.getElementsByClassName('js-forum-topic-reply--toggle')
     @fixedBar = document.getElementsByClassName('js-sticky-footer--fixed-bar')
 
     $(document).on 'ajax:success', '.js-forum-topic-reply', @posted
 
-    $(document).on 'click', '.js-forum-topic-reply--close', @deactivate
-    $(document).on 'click', '.js-forum-topic-reply--new', @activate
+    $(document).on 'click', '.js-forum-topic-reply--deactivate', @toggleDeactivate
+    $(document).on 'click', '.js-forum-topic-reply--toggle', @toggle
     $(document).on 'ajax:success', '.js-forum-topic-reply--quote', @activateWithReply
 
     $(document).on 'focus', '.js-forum-topic-reply--input', @activate
     $(document).on 'input change', '.js-forum-topic-reply--input', _.debounce(@inputChange, 500)
-    $(document).on 'click', @deactivateIfBlank
 
     $.subscribe 'stickyFooter', @stickOrUnstick
 
@@ -51,7 +51,7 @@ class @ForumTopicReply
     @activate() if @getState('active') == '1'
 
 
-  available: => @box.length
+  available: => @block.length
 
 
   deleteState: (key) =>
@@ -66,13 +66,17 @@ class @ForumTopicReply
     localStorage.setItem "forum-topic-reply--#{document.location.pathname}--#{key}", value
 
 
-  activate: (e) =>
-    e.preventDefault() if e
-
+  activate: =>
     @setState 'active', '1'
 
     @stickyFooter.markerEnable @marker()
     $.publish 'stickyFooter:check'
+
+    button.classList.add 'js-activated' for button in @toggleButtons
+
+    @enableFlash() if @getState('sticking') != '1' && currentUser.id?
+
+    Timeout.set 0, => @input[0].focus()
 
 
   activateWithReply: (e, data) =>
@@ -87,28 +91,24 @@ class @ForumTopicReply
     @inputChange()
     $input[0].selectionStart = data.length
 
-    @activate(e)
+    @activate()
 
 
-  deactivate: (e) =>
-    e.preventDefault() if e
-
+  deactivate: =>
     @stickyFooter.markerDisable @marker()
     @setState 'active', '0'
     $.publish 'stickyFooter:check'
+    @disableFlash()
+    button.classList.remove 'js-activated' for button in @toggleButtons
 
 
-  deactivateIfBlank: (e) =>
-    return unless @available() &&
-      @getState('active') == '1' &&
-      @input[0].value == ''
+  disableFlash: ->
+    $('.js-forum-topic-reply').removeClass('js-forum-topic-reply-flash')
 
-    $target = $(e.target)
 
-    return unless $target.closest('.js-forum-topic-reply').length == 0 &&
-        $target.closest('.js-forum-topic-reply--new').length == 0
-
-    @deactivate()
+  enableFlash: =>
+    $('.js-forum-topic-reply').addClass('js-forum-topic-reply-flash')
+    Timeout.set 500, @disableFlash # so animation doesn't play again when element gets transplanted from unsticking.
 
 
   inputChange: =>
@@ -116,9 +116,12 @@ class @ForumTopicReply
 
 
   posted: (e, data) =>
+    input = @input[0]
+
     @deactivate()
-    @$input().val ''
+    input.value = ''
     @setState 'text', ''
+    @forumPostPreview.hidePreview(target: input)
 
     $newPost = $(data)
 
@@ -135,31 +138,55 @@ class @ForumTopicReply
       @forum.endPost().scrollIntoView()
 
 
-  stick: =>
-    return if @getState('sticking') == '1'
+  stickOrUnstick: (_e, target) =>
+    stick =
+      if osu.isDesktop()
+        target == 'forum-topic-reply'
+      else
+        @getState('active') == '1'
 
-    @setState 'sticking', '1'
+    @toggleStick(stick)
+
+
+  toggle: =>
+    if @getState('active') == '1'
+      @deactivate()
+    else
+      @activate()
+
+
+  toggleDeactivate: (e) =>
+    # prevent reactivation if the button is located inside the form
+    e.stopPropagation()
+    @deactivate()
+
+
+  toggleStick: (stick) =>
+    isSticking = @getState('sticking') == '1'
+
+    document.body.style.overflow =
+      if !stick || osu.isDesktop()
+        ''
+      else
+        'hidden'
+
+    return if stick == isSticking
+
+    box = @box[0]
+
+    if stick
+      @setState 'sticking', '1'
+      box.dataset.state = 'stick'
+      target = @fixedBar[0]
+    else
+      @deleteState 'sticking'
+      delete box.dataset.state if box.dataset.state?
+      target = @container[0]
 
     $input = @$input()
     inputFocused = $input.is(':focus')
 
-    @fixedBar[0].insertBefore(@box[0], @fixedBar[0].firstChild)
-    @closeButton[0].classList.remove 'hidden'
+    target.insertBefore(box, target.firstChild)
 
     $input.focus() if inputFocused
-
-
-  unstick: (e) =>
-    return unless @getState('sticking') == '1'
-
-    @deleteState 'sticking'
-
-    @container[0].insertBefore(@box[0], @container[0].firstChild)
-    @closeButton[0].classList.add 'hidden'
-
-
-  stickOrUnstick: (_e, target) =>
-    if target == 'forum-topic-reply'
-      @stick()
-    else
-      @unstick()
+    osu.pageChange() # sync reply box height

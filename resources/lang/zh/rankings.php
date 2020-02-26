@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -19,20 +19,34 @@
  */
 
 return [
-    'header' => ':type 排名',
+    'country' => [
+        'filter' => '按国家/地区筛选',
+    ],
+
     'type' => [
         'performance' => '表现',
-        'charts' => 'Charts', //暂时没有合适的翻译
+        'charts' => '月赛',
         'score' => '总分',
-        'country' => '国家',
-        'kudosu' => 'Kudosu', //mapping相关,暂不翻译
+        'country' => '国家和地区',
     ],
+
+    'spotlight' => [
+        'end_date' => '截止日期',
+        'map_count' => '谱面数量',
+        'participants' => '参与人数',
+        'start_date' => '开始日期',
+    ],
+
     'stat' => [
         'accuracy' => '准确率',
+        'active_users' => '活跃用户',
+        'country' => '国家和地区',
         'play_count' => '游戏次数',
         'performance' => '表现',
         'total_score' => '总分',
         'ranked_score' => 'Ranked 总分',
+        'average_score' => '平均得分',
+        'average_performance' => '平均表现',
         'ss' => 'SS',
         's' => 'S',
         'a' => 'A',

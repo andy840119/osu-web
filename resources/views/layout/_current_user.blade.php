@@ -1,5 +1,5 @@
 {{--
-    Copyright 2015-2017 ppy Pty. Ltd.
+    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 
     This file is part of osu!web. osu!web is distributed with the hope of
     attracting more community contributions to the core ecosystem of osu!.
@@ -15,6 +15,8 @@
     You should have received a copy of the GNU Affero General Public License
     along with osu!web.  If not, see <http://www.gnu.org/licenses/>.
 --}}
-<script data-turbolinks-eval="always">
+<script class="js-current-user">
     var currentUser = {!! Auth::check() ? json_encode(Auth::user()->defaultJson()) : '{}' !!};
+    // self-destruct to avoid rerun by turbolinks
+    $('.js-current-user').remove();
 </script>

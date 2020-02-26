@@ -1,5 +1,5 @@
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -18,12 +18,12 @@
 
 .beatmap-discussion-new {
   @_avatar-size: 45px;
+  @_side-padding: 20px;
 
   .default-box-shadow();
   display: flex;
-  background-color: #fff;
+  background-color: @osu-colour-b4;
   flex-direction: column;
-  margin-top: 10px;
 
   &__avatar {
     flex: none;
@@ -31,66 +31,41 @@
     height: @_avatar-size;
   }
 
-  &__col {
-    background-color: #eee;
-    padding: 20px 10px;
-
-    flex: 1 0 auto;
-    display: flex;
-    justify-content: center;
-
-    @media @desktop {
-      flex: none;
-    }
-
-    &--left {
-      @media @desktop {
-        padding-left: 20px;
-      }
-
-      justify-content: center;
-    }
-
-    &--right {
-      padding-right: 20px;
-
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-    }
-
-    &--main {
-      flex: 1;
-      background-color: #fff;
-      display: flex;
-    }
-  }
-
   &__content {
     display: flex;
-    padding: 0 20px 10px;
+    padding: 0 @_side-padding 10px;
   }
 
   &__footer {
     display: flex;
     flex-wrap: wrap;
-    background-color: #555;
-    padding: 5px 20px;
+    background-color: @osu-colour-b5;
+    padding: 5px @_side-padding;
     justify-content: space-between;
+
+    @media @mobile {
+      width: 100%;
+      flex-direction: column;
+    }
   }
 
   &__footer-content {
-    padding: 5px 0;
+    margin: 5px 0;
     display: flex;
     flex: none;
+    .default-border-radius();
 
     &--right {
-      flex: 1;
+      margin: 0 0 5px;
       justify-content: flex-end;
+      flex: 1 0 auto;
+      flex-wrap: wrap;
     }
   }
 
   &__message {
+    .content-font();
+    color: @osu-colour-f1;
     flex: 1;
     padding-left: 10px;
     font-size: @font-size--title-small-2;
@@ -100,22 +75,55 @@
   }
 
   &__message-area {
+    color: white;
     .reset-input();
     resize: vertical;
     width: 100%;
+    max-height: 70vh;
+    min-height: 3em;
 
     flex: 1 0 auto;
+    font-size: @font-size--phone-input;
+
+    &::placeholder {
+      color: @osu-colour-b1;
+    }
+
+    @media @desktop {
+      font-size: inherit;
+    }
   }
 
-  &__message-box {
-    width: 100%;
-    display: flex;
-  }
-
-  &__message-hint {
-    margin: 0;
+  &__message-counter {
+    font-size: @font-size--normal;
+    text-align: right;
     margin-top: 5px;
-    color: @green;
+
+    &--almost-over {
+      color: @yellow-dark;
+    }
+
+    &--over {
+      color: @red;
+      font-weight: 700;
+    }
+  }
+
+  &__notice {
+    background-color: @osu-colour-b5;
+    padding: 5px @_side-padding;
+    color: #fff;
+    font-size: @font-size--normal;
+  }
+
+  &__notice-checkbox {
+    margin: 5px 0 0;
+    text-transform: initial;
+    font-weight: initial;
+  }
+
+  &__notice-link {
+    .link-default();
   }
 
   &__timestamp-col {
@@ -123,12 +131,17 @@
     padding: 10px;
     font-size: @font-size--small-2;
     color: #fff;
-    background-color: #444;
+    background-color: @osu-colour-b3;
     border-radius: 0 @border-radius-base @border-radius-base 0;
 
+    @media @mobile {
+      flex-grow: 1;
+    }
+
     &--label {
-      background-color: #333;
+      background-color: @osu-colour-b6;
       border-radius: @border-radius-base 0 0 @border-radius-base;
+      flex-grow: 0;
     }
   }
 

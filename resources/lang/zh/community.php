@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -20,110 +20,144 @@
 
 return [
     'support' => [
-        'header' => [
-            // size in font-size
-            'big_description' => '喜欢osu!?<br/>
-                                支持osu!开发者吧 :D',
-            'small_description' => '',
-            'support_button' => '我想支持osu!',
+        'convinced' => [
+            'title' => '太棒了，买买买！OwO',
+            'support' => '支持 osu!',
+            'gift' => '或者以礼物方式赠送给其它玩家',
+            'instructions' => '点击爱心前往 osu! 商店',
         ],
+        'why-support' => [
+            'title' => '为什么支持 osu!？钱将用往何处？',
 
-        'dev_quote' => 'osu!是一款完全免费的游戏,但是经营它却不是免费的.在我们租用服务器和高速网络,维护系统及社区,向比赛提供奖品,提供疑难解答,以及让玩家们开心的同时,osu!已经消耗了大量的金钱! 噢,别忘了我们是凭着爱好在做osu!,没有任何的广告合作!
-            <br/><br/>osu!由我一个人运营着.
-            为了维护osu!我已经辞去了我的日常工作,
-            而我时常感受到使osu!维持我所期望的质量是一件很艰难的事情.
-            我以个人的名义感谢至今为止所有支持osu!的人,
-            也包括继续支持osu!的所有人 :).',
-
-        'why_support' => [
-            'title' => '为什么我应该支持osu!?',
-            'blocks' => [
-                'dev' => '开发和维护主要是一个澳大利亚的伙计在负责', //可能不准确
-                'time' => '运行它的消耗已经不能称得上"兴趣"了',
-                'ads' => '无广告. <br/><br/>
-                        不像99.95%的网站,我们不推送广告,也没有从中获利.',
-                'goodies' => '您还能得到特技(见下方)!', //可能不准确
+            'team' => [
+                'title' => '支持开发团队',
+                'description' => '一个小团队开发并维护着 osu!，你的支持可以帮助他们继续下去。',
+            ],
+            'infra' => [
+                'title' => '维护服务器',
+                'description' => '资金将用于维护网站和在线游玩、排行榜等服务',
+            ],
+            'featured-artists' => [
+                'title' => '精选艺术家',
+                'description' => '在你的支持下，我们可以与更多艺术家合作为 osu! 带来更多的绝佳音乐。',
+                'link_text' => '查看当前列表 &raquo;',
+            ],
+            'ads' => [
+                'title' => '维持 osu! 自给自足',
+                'description' => '你的帮助可以让游戏保持独立并远离广告，不受外部赞助商的控制。',
+            ],
+            'tournaments' => [
+                'title' => '官方比赛',
+                'description' => '为运营 osu! 世界杯筹集资金（及奖励）。',
+                'link_text' => '探索比赛 &raquo;',
+            ],
+            'bounty-program' => [
+                'title' => '开源赏金计划',
+                'description' => '支持那些花费时间与精力来帮助 osu! 变得更好的社区贡献者。',
+                'link_text' => '了解更多 &raquo;',
             ],
         ],
-
         'perks' => [
-            'title' => '噢?我能得到什么?!',
+            'title' => 'Wow，Awesome！那么我能得到什么？',
             'osu_direct' => [
-                'title' => 'osu!direct', //不翻译
-                'description' => '您可以不离开游戏进行谱面的搜索和下载.',
+                'title' => 'osu!direct',
+                'description' => '在游戏客户端内搜索和下载谱面。',
+            ],
+
+            'friend_ranking' => [
+                'title' => '好友排名',
+                'description' => "在游戏内与网站上查看谱面排行榜，了解你与好友孰强孰弱。",
+            ],
+
+            'country_ranking' => [
+                'title' => '国内/区内排名',
+                'description' => '征服世界前，先征服你的国家（或者地区）。',
+            ],
+
+            'mod_filtering' => [
+                'title' => '按 Mod 筛选',
+                'description' => '只和玩 HDHR 的玩家打？没问题！',
             ],
 
             'auto_downloads' => [
                 'title' => '自动下载',
-                'description' => '多人游戏,观看他人游戏,或是点击聊天中的谱面链接时,osu!会自动下载!',
+                'description' => '本地没有需要的谱面时，osu! 会自动下载！',
             ],
 
-            'upload_more' => [ //TODO 需要帮助
-                'title' => 'Upload More',
-                'description' => 'Additional pending beatmap slots (per ranked beatmap) up to a max of 10.',
+            'upload_more' => [
+                'title' => '上传更多谱面',
+                'description' => '谱面集中 Pending 谱面上限增加到 10 张。',
             ],
 
             'early_access' => [
                 'title' => '抢先体验',
-                'description' => '在一些特性公开之前,您将能抢先体验它们!',
+                'description' => '抢先体验正在测试中的新特性！<br/><br/>同时还包含网站的新功能！',
             ],
 
             'customisation' => [
-                'title' => '自定义',
-                'description' => '您可以自定义您的个人资料(me!).',
+                'title' => '个性化',
+                'description' => "自定义个人资料页。",
             ],
 
             'beatmap_filters' => [
-                'title' => '谱面筛选器',
-                'description' => '您可以按照玩过和没玩过或是达到某个等级来筛选谱面.', //可能不准确
+                'title' => '筛选谱面',
+                'description' => '可在搜索谱面时以更多调件筛选，例如游玩状态和得分评价。',
             ],
 
             'yellow_fellow' => [
-                'title' => '黄色高亮',
-                'description' => '您在聊天时,名字会被黄色加亮.',
+                'title' => '用户名高亮',
+                'description' => '聊天时，用户名会变成亮黄色。',
             ],
 
             'speedy_downloads' => [
                 'title' => '高速下载',
-                'description' => '您的下载限制会被放开,尤其是当您使用osu!direct的时候.',
+                'description' => '更快的下载速度。使用 osu!direct 的话甚至会更快。',
             ],
 
             'change_username' => [
-                'title' => '变更用户名',
-                'description' => '您可以改变您的用户名而不需要额外的花费(最多1次)',
+                'title' => '修改用户名',
+                'description' => '你能得到一次免费修改用户名的机会。',
             ],
 
             'skinnables' => [
-                'title' => '皮肤',
-                'description' => '您可以改变更多的游戏皮肤元素,比如主菜单的背景.', //可能不准确
+                'title' => '更多的皮肤',
+                'description' => '自定义更多的游戏界面元素，例如主菜单的背景。',
             ],
 
             'feature_votes' => [
-                'title' => '特性投票',
-                'description' => '您可以为新特性请求投票(每月2票)',
+                'title' => '新特性投票',
+                'description' => '为新功能投票（每月 2 票）。',
             ],
 
             'sort_options' => [
-                'title' => '排名',
-                'description' => '新添加:您可以在游戏中按 国家/好友/指定MOD 进行排名了.',
+                'title' => '详细的排名',
+                'description' => '查看排名时可按 国家或地区/好友/所选MOD 进行排名。',
             ],
 
-            'feel_special' => [ //TODO 需要帮助
-                'title' => 'Feel Special',
-                'description' => 'The warm and fuzzy feeling of doing your part to keep osu! running smoothly!',
+            'more_favourites' => [
+                'title' => '更大的收藏夹',
+                'description' => '你的谱面收藏夹容量将从 :normally 个增加到 :supporter 个',
+            ],
+            'more_friends' => [
+                'title' => '更多好友位',
+                'description' => '你的好友位数量将从 :normally 增加到 :supporter',
+            ],
+            'more_beatmaps' => [
+                'title' => '上传更多谱面，肝更多谱',
+                'description' => '同一时间你能拥有的未 ranked 的谱面数量由一个基数值和附加奖励相加得到，附加奖励根据你已 ranked 的谱面数量而定，并且有一个上限。<br/><br/>通常情况下，基数为4，每多一张 ranked 的谱面会增加 1，最多增加 2。当你是支持者时，基数变为8，每张 ranked 的谱面会增加 1，最多增加 12。',
+            ],
+            'friend_filtering' => [
+                'title' => '好友排行榜',
+                'description' => '和你的朋友们一起比赛，看看你如何超过他们的排名！*<br/><br/><small>* 在新版网站上目前尚不支持此功能，即将上线 (tm)</small>',
             ],
 
-            'more_to_come' => [
-                'title' => '即将到来',
-                'description' => '',
-            ],
         ],
-
-        'convinced' => [
-            'title' => 'I\'m convinced! :D', //TODO 需要帮助
-            'support' => '支持osu!',
-            'gift' => '或者给其他玩家一份礼物',
-            'instructions' => '点击爱心按钮前往osu!商店',
+        'supporter_status' => [
+            'contribution' => '感谢你一直以来的支持！你已经捐赠了 :dollars 并购买了 :tags 次支持者标签！',
+            'gifted' => "你已经捐赠了 :giftedTags 次支持者标签（花费了 :giftedDollars ），真慷慨啊！",
+            'not_yet' => "你还没有支持者标签 :(",
+            'valid_until' => '你的支持者标签将在 :date 到期',
+            'was_valid_until' => '你的支持者标签已于 :date 到期',
         ],
     ],
 ];

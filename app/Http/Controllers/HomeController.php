@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -22,16 +22,15 @@ namespace App\Http\Controllers;
 
 use App;
 use App\Libraries\CurrentStats;
-use App\Libraries\Search;
+use App\Libraries\Search\AllSearch;
+use App\Libraries\Search\QuickSearch;
+use App\Models\BeatmapDownload;
 use App\Models\Beatmapset;
-use App\Models\Build;
-use App\Models\Changelog;
 use App\Models\Forum\Post;
-use App\Models\News;
-use App\Models\User;
+use App\Models\NewsPost;
+use App\Models\UserDonation;
 use Auth;
 use Request;
-use View;
 
 class HomeController extends Controller
 {
@@ -41,7 +40,7 @@ class HomeController extends Controller
     {
         $this->middleware('auth', [
             'only' => [
-                'search',
+                'downloadQuotaCheck',
                 'quickSearch',
             ],
         ]);
@@ -53,64 +52,19 @@ class HomeController extends Controller
     {
         $post = new Post(['post_text' => Request::input('text')]);
 
-        return $post->bodyHTML;
+        return $post->bodyHTML();
     }
 
-    public function getChangelog()
+    public function downloadQuotaCheck()
     {
-        $buildId = presence(Request::input('build'));
-
-        $changelogs = Changelog::default()
-            ->with('user');
-
-        if ($buildId !== null) {
-            $build = Build::default()->with('updateStream')->where('version', $buildId)->firstOrFail();
-
-            $changelogs = [$build->date->format('F j, Y') => $changelogs->where('build', $build->version)->get()];
-        } else {
-            $from = Changelog::default()->first();
-            $changelogs = $changelogs
-                ->where('date', '>', $from->date->subWeeks(config('osu.changelog.recent_weeks')))
-                ->get()
-                ->groupBy(function ($item) {
-                    return $item->date->format('F j, Y');
-                });
-        }
-
-        $streams = Build::latestByStream(config('osu.changelog.update_streams'))
-            ->orderByField('stream_id', config('osu.changelog.update_streams'))
-            ->with('updateStream')
-            ->get();
-
-        $featuredStream = null;
-
-        foreach ($streams as $index => $stream) {
-            if ($stream->stream_id === config('osu.changelog.featured_stream')) {
-                $featuredStream = $stream;
-                unset($streams[$index]);
-                break;
-            }
-        }
-
-        return view('home.changelog', compact('changelogs', 'streams', 'featuredStream', 'build'));
+        return [
+            'quota_used' => BeatmapDownload::where('user_id', Auth::user()->user_id)->count(),
+        ];
     }
 
     public function getDownload()
     {
-        return view('home.download');
-    }
-
-    public function getIcons()
-    {
-        return view('home.icons')
-        ->with('icons', [
-            'osu',
-            'mode-osu',
-            'mode-mania',
-            'mode-fruits',
-            'mode-taiko',
-            'social-patreon',
-        ]);
+        return ext_view('home.download');
     }
 
     public function index()
@@ -122,69 +76,81 @@ class HomeController extends Controller
             return ujs_redirect(route('store.products.index'));
         }
 
+        $newsLimit = Auth::check() ? NewsPost::DASHBOARD_LIMIT + 1 : NewsPost::LANDING_LIMIT;
+        $news = NewsPost::default()->limit($newsLimit)->get();
+
         if (Auth::check()) {
-            $news = News\Index::all();
             $newBeatmapsets = Beatmapset::latestRankedOrApproved();
-            $popularBeatmapsetsPlaycount = Beatmapset::mostPlayedToday();
-            $popularBeatmapsetIds = array_keys($popularBeatmapsetsPlaycount);
-            $popularBeatmapsets = Beatmapset::whereIn('beatmapset_id', $popularBeatmapsetIds)
-                ->orderByField('beatmapset_id', $popularBeatmapsetIds)
+            $popularBeatmapsets = Beatmapset::ranked()
+                ->where('approved_date', '>', now()->subDays(30))
+                ->orderBy('favourite_count', 'DESC')
+                ->limit(5)
                 ->get();
 
-            return view('home.user', compact(
+            return ext_view('home.user', compact(
                 'newBeatmapsets',
                 'news',
-                'popularBeatmapsets',
-                'popularBeatmapsetsPlaycount'
+                'popularBeatmapsets'
             ));
         } else {
-            return view('home.landing', ['stats' => new CurrentStats()]);
+            $news = json_collection($news, 'NewsPost');
+
+            return ext_view('home.landing', ['stats' => new CurrentStats(), 'news' => $news]);
         }
+    }
+
+    public function messageUser($user)
+    {
+        return ujs_redirect(route('chat.index', ['sendto' => $user]));
+    }
+
+    public function osuSupportPopup()
+    {
+        return ext_view('objects._popup_support_osu');
     }
 
     public function quickSearch()
     {
-        $query = Request::input('query');
-        $limit = 5;
+        $quickSearch = new QuickSearch(request(), ['user' => auth()->user()]);
+        $searches = $quickSearch->searches();
 
-        if (strlen($query) < config('osu.search.minimum_length')) {
-            return response([], 204);
+        $result = [];
+
+        if ($quickSearch->hasQuery()) {
+            foreach ($searches as $mode => $search) {
+                if ($search === null) {
+                    continue;
+                }
+                $result[$mode]['total'] = $search->count();
+            }
+
+            $result['user']['users'] = json_collection($searches['user']->data(), 'UserCompact', [
+                'country',
+                'cover',
+                'group_badge',
+                'support_level',
+            ]);
+            $result['beatmapset']['beatmapsets'] = json_collection($searches['beatmapset']->data(), 'Beatmapset', ['beatmaps']);
         }
 
-        $params = compact('query', 'limit');
-
-        $beatmapsets = Beatmapset::search($params);
-        $users = User::search($params);
-
-        return view('home.nav_search_result', compact(
-            'beatmapsets',
-            'users'
-        ));
+        return $result;
     }
 
     public function search()
     {
-        if (Request::input('mode') === 'beatmapset') {
-            return ujs_redirect(route('beatmapsets.index', ['q' => Request::input('query')]));
+        if (request('mode') === 'beatmapset') {
+            return ujs_redirect(route('beatmapsets.index', ['q' => request('query')]));
         }
 
-        $params = array_merge(Request::all(), [
-            'user' => Auth::user(),
-        ]);
+        $allSearch = new AllSearch(request(), ['user' => Auth::user()]);
+        $isSearchPage = true;
 
-        $search = new Search($params);
-        $missingQuery = strlen(trim(Request::input('query'))) < config('osu.search.minimum_length');
-
-        if ($search->mode === Search::DEFAULT_MODE) {
-            $search->params['limit'] = 8;
-        }
-
-        return view('home.search', compact('search', 'missingQuery'));
+        return ext_view('home.search', compact('allSearch', 'isSearchPage'));
     }
 
     public function setLocale()
     {
-        $newLocale = get_valid_locale(Request::input('locale'));
+        $newLocale = get_valid_locale(Request::input('locale')) ?? config('app.fallback_locale');
         App::setLocale($newLocale);
 
         if (Auth::check()) {
@@ -193,41 +159,189 @@ class HomeController extends Controller
             ]);
         }
 
-        return js_view('layout.ujs-reload')
+        return ext_view('layout.ujs-reload', [], 'js')
             ->withCookie(cookie()->forever('locale', $newLocale));
     }
 
     public function supportTheGame()
     {
-        return view('home.support-the-game')
-        ->with('data', [
-            // why support's blocks
-            'blocks' => [
-                // localization's name => icon
-                'dev' => 'user',
-                'time' => 'clock-o',
-                'ads' => 'thumbs-up',
-                'goodies' => 'star',
+        if (Auth::check()) {
+            $user = Auth::user();
+
+            // current status
+            $expiration = optional($user->osu_subscriptionexpiry)->addDays(1);
+            $current = $expiration !== null ? $expiration->isFuture() : false;
+
+            // purchased
+            $tagPurchases = $user->supporterTagPurchases;
+            $dollars = $tagPurchases->sum('amount');
+            $cancelledTags = $tagPurchases->where('cancel', true)->count() * 2; // 1 for purchase transaction and 1 for cancel transaction
+            $tags = $tagPurchases->count() - $cancelledTags;
+
+            // gifted
+            $gifted = $tagPurchases->where('target_user_id', '<>', $user->user_id);
+            $giftedDollars = $gifted->sum('amount');
+            $canceledGifts = $gifted->where('cancel', true)->count() * 2; // 1 for purchase transaction and 1 for cancel transaction
+            $giftedTags = $gifted->count() - $canceledGifts;
+
+            $supporterStatus = [
+                // current status
+                'current' => $current,
+                'expiration' => $expiration,
+                // purchased
+                'dollars' => currency($dollars, 2, false),
+                'tags' => i18n_number_format($tags),
+                // gifted
+                'giftedDollars' => currency($giftedDollars, 2, false),
+                'giftedTags' => i18n_number_format($giftedTags),
+            ];
+
+            if ($current) {
+                $lastTagPurchaseDate = UserDonation::where('target_user_id', $user->user_id)
+                    ->orderBy('timestamp', 'desc')
+                    ->pluck('timestamp')
+                    ->first();
+
+                if ($lastTagPurchaseDate === null) {
+                    $lastTagPurchaseDate = $expiration->copy()->subMonths(1);
+                }
+
+                $total = $expiration->diffInDays($lastTagPurchaseDate);
+                $used = $lastTagPurchaseDate->diffInDays();
+
+                $supporterStatus['remainingRatio'] = 100 - round(($used / $total) * 100, 2);
+            }
+        }
+
+        $pageLayout = [
+            // why support
+            'support-reasons' => [
+                'type' => 'group',
+                'section' => 'why-support',
+                'items' => [
+                    'team' => [
+                        'icons' => ['fas fa-users'],
+                    ],
+                    'infra' => [
+                        'icons' => ['fas fa-server'],
+                    ],
+                    'featured-artists' => [
+                        'icons' => ['fas fa-user-astronaut'],
+                        'link' => route('artists.index'),
+                    ],
+                    'ads' => [
+                        'icons' => ['fas fa-ad', 'fas fa-slash'],
+                    ],
+                    'tournaments' => [
+                        'icons' => ['fas fa-trophy'],
+                        'link' => route('tournaments.index'),
+                    ],
+                    'bounty-program' => [
+                        'icons' => ['fas fa-child'],
+                        'link' => osu_url('bounty-form'),
+                    ],
+                ],
             ],
 
-            // supporter's perks
+            // supporter perks
+
+            // There are 5 perk rendering types: image, image-flipped, hero, group and image-group.
+            // image, image-flipped, hero each show an individual perk (with image) while group and image-group show groups of perks (the latter with images)
             'perks' => [
-                // localization's name => icon
-                'osu_direct' => 'search',
-                'auto_downloads' => 'cloud-download',
-                'upload_more' => 'cloud-upload',
-                'early_access' => 'flask',
-                'customisation' => 'picture-o',
-                'beatmap_filters' => 'filter',
-                'yellow_fellow' => 'fire',
-                'speedy_downloads' => 'dashboard',
-                'change_username' => 'magic',
-                'skinnables' => 'paint-brush',
-                'feature_votes' => 'thumbs-up',
-                'sort_options' => 'trophy',
-                'feel_special' => 'heart',
-                'more_to_come' => 'gift',
+                [
+                    'type' => 'image',
+                    'name' => 'osu_direct',
+                    'icons' => ['fas fa-search'],
+                ],
+                [
+                    'type' => 'image_group',
+                    'items' => [
+                        'friend_ranking' => [
+                            'icons' => ['fas fa-list-alt'],
+                        ],
+                        'country_ranking' => [
+                            'icons' => ['fas fa-globe-asia'],
+                        ],
+                        'mod_filtering' => [
+                            'icons' => ['fas fa-tasks'],
+                        ],
+                    ],
+                ],
+                [
+                    'type' => 'image',
+                    'variant' => 'flipped',
+                    'name' => 'beatmap_filters',
+                    'icons' => ['fas fa-filter'],
+                ],
+                [
+                    'type' => 'group',
+                    'items' => [
+                        'auto_downloads' => [
+                            'icons' => ['fas fa-download'],
+                        ],
+                        'more_beatmaps' => [
+                            'icons' => ['fas fa-file-upload'],
+                        ],
+                        'early_access' => [
+                            'icons' => ['fas fa-flask'],
+                        ],
+                    ],
+                ],
+                [
+                    'type' => 'hero',
+                    'name' => 'customisation',
+                    'icons' => ['fas fa-image'],
+                ],
+                [
+                    'type' => 'group',
+                    'items' => [
+                        'more_favourites' => [
+                            'icons' => ['fas fa-star'],
+                            'translation_options' => [
+                                'normally' => config('osu.beatmapset.favourite_limit'),
+                                'supporter' => config('osu.beatmapset.favourite_limit_supporter'),
+                            ],
+                        ],
+                        'more_friends' => [
+                            'icons' => ['fas fa-user-friends'],
+                            'translation_options' => [
+                                'normally' => config('osu.user.max_friends'),
+                                'supporter' => config('osu.user.max_friends_supporter'),
+                            ],
+                        ],
+                        'friend_filtering' => [
+                            'icons' => ['fas fa-medal'],
+                        ],
+                    ],
+                ],
+                [
+                    'type' => 'image_group',
+                    'items' => [
+                        'yellow_fellow' => [
+                            'icons' => ['fas fa-fire'],
+                        ],
+                        'speedy_downloads' => [
+                            'icons' => ['fas fa-tachometer-alt'],
+                        ],
+                        'change_username' => [
+                            'icons' => ['fas fa-magic'],
+                        ],
+                        'skinnables' => [
+                            'icons' => ['fas fa-paint-brush'],
+                        ],
+                    ],
+                ],
             ],
+        ];
+
+        return ext_view('home.support-the-game', [
+            'supporterStatus' => $supporterStatus ?? [],
+            'data' => $pageLayout,
         ]);
+    }
+
+    public function testflight()
+    {
+        return ext_view('home.testflight');
     }
 }

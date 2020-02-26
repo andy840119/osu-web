@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -19,13 +19,20 @@
  */
 
 return [
-
     'beatmapsets' => [
+        'covers' => [
+            'regenerate' => '重新生成',
+            'regenerating' => '重新生成中...',
+            'remove' => '移除',
+            'removing' => '正在删除...',
+            'title' => '谱面集封面',
+        ],
         'show' => [
+            'covers' => '管理谱面封面',
             'discussion' => [
                 '_' => 'Modding v2',
                 'activate' => '启用',
-                'activate_confirm' => '确认要为这个谱面启用 modding v2 吗?',
+                'activate_confirm' => '确认要为这个谱面启用 Modding v2 吗?',
                 'active' => '已启用',
                 'inactive' => '未启用',
             ],
@@ -39,7 +46,7 @@ return [
 
                 'forum-name' => '论坛 #:id: :name',
 
-                'no-cover' => '没有封面',
+                'no-cover' => '没有头图',
 
                 'submit' => [
                     'save' => '保存',
@@ -49,8 +56,8 @@ return [
                 'title' => '论坛封面列表',
 
                 'type-title' => [
-                    'default-topic' => '默认主题封面',
-                    'main' => '论坛封面',
+                    'default-topic' => '默认板块头图',
+                    'main' => '论坛头图',
                 ],
             ],
         ],
@@ -64,9 +71,8 @@ return [
 
     'pages' => [
         'root' => [
-            'title' => '管理员控制台',
-
             'sections' => [
+                'beatmapsets' => '谱面集',
                 'forum' => '论坛',
                 'general' => '常规',
                 'store' => '商店',
@@ -79,6 +85,13 @@ return [
             'index' => [
                 'title' => '订单列表',
             ],
+        ],
+    ],
+
+    'users' => [
+        'restricted_banner' => [
+            'title' => '该账户当前处于限制模式',
+            'message' => '（只有管理员能看见这条信息）',
         ],
     ],
 

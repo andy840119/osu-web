@@ -1,5 +1,5 @@
 ###
-#    Copyright 2015-2017 ppy Pty. Ltd.
+#    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 #
 #    This file is part of osu!web. osu!web is distributed with the hope of
 #    attracting more community contributions to the core ecosystem of osu!.
@@ -48,7 +48,7 @@ class @StoreSupporterTagPrice
       else 0
 
   pricePerMonth: ->
-    (@_price / @duration()).toFixed(2)
+    osu.formatNumber(@_price / @duration(), 2)
 
   discount: ->
     if @duration() >= 12
@@ -65,17 +65,14 @@ class @StoreSupporterTagPrice
     months: Math.floor(@duration() % 12)
 
   durationText: ->
+    # don't forget to update SupporterTag::getDurationText() in php
     duration = @durationInYears()
-    yearsText = switch duration.years
-                when 0
-                  ''
-                else
-                  Lang.choice('supporter_tag.duration.years', duration.years, length: duration.years)
+    texts = []
 
-    monthsText = switch duration.months
-                 when 0
-                   ''
-                 else
-                   Lang.choice('supporter_tag.duration.months', duration.months, length: duration.months)
+    if duration.years > 0
+      texts.push osu.transChoice('common.count.years', duration.years)
 
-    _.compact([yearsText, monthsText]).join(', ')
+    if duration.months > 0
+      texts.push osu.transChoice('common.count.months', duration.months)
+
+    texts.join(', ')

@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -20,61 +20,88 @@
 
 return [
     'support' => [
-        'header' => [
-            // size in font-size
-            'big_description' => 'Kochasz osu!?<br/>
-                                Wspomóż deweloperów osu! :D',
-            'small_description' => '',
-            'support_button' => 'Chcę wspomóc osu!',
+        'convinced' => [
+            'title' => 'Zachęciłeś mnie! :D',
+            'support' => 'wspomóż osu!',
+            'gift' => 'lub podaruj status donatora innemu graczowi',
+            'instructions' => 'kliknij ikonę serca, aby przejść do sklepu osu!',
         ],
+        'why-support' => [
+            'title' => 'Dlaczego warto wspomóc osu!? Na co są przeznaczane pieniądze?',
 
-        'dev_quote' => 'osu! jest kompletnie darmową grą, ale utrzymanie jej nie jest już darmowe. Oprócz kosztów utrzymania serwerów i wysokiej jakości Internetu, czasu spędzonego na zarządzanie systemem i społecznością, ustanawianiem nagród za konkursy, odpowiadaniem na pytanie dotyczące pomocy technicznej i ogólnego utrzymania społeczności szczęśliwej, osu! wymaga dość sporej sumy pieniędzy. I nie zapominajmy, że robimy to bez żadnych reklam ani partnerstwa z denerwującymi toolbarami!
-            <br/><br/>osu! jest w większości utrzymwane przeze mnie, którego możecie znać jako "peppy".
-            Musiałem opuścić normalną pracę, aby wyrabiać się czasowo z osu! i czasami zdarza się, że mam problem z utrzymaniem standardów, o które się staram.
-            Chciałbym zaoferować personalne podziękowania dla każdego, który wspomógł osu! do tej pory,
-            tak samo jak tych, którzy ciągle wspierają tę wspaniałą grę i społeczność :).',
-
-        'why_support' => [
-            'title' => 'Dlaczego powinienem wspomóc osu! ?',
-            'blocks' => [
-                'dev' => 'Stworzone i utrzymywane głównie przez jedną osobę z Australii.',
-                'time' => 'Zajmuje tyle czasu, że nie można tego już nazwać "hobby".',
-                'ads' => 'Brak jakichkolwiek reklam. <br/><br/>
-                        W odróżnieniu od 99.95% Internetu, nie zarabiamy na pokazywaniu reklam.',
-                'goodies' => 'Dostajesz dodatkowe korzyści!',
+            'team' => [
+                'title' => 'Wynagrodzenie dla zespołu',
+                'description' => 'osu! jest prowadzone i rozwijane przez mały zespół. Twoje wsparcie pomaga im, no wiesz, żyć.',
+            ],
+            'infra' => [
+                'title' => 'Infrastruktura serwerowa',
+                'description' => 'Część wsparcia jest przeznaczona na serwery odpowiadające za działanie strony, tryb wieloosobowy, tabele wyników itd.',
+            ],
+            'featured-artists' => [
+                'title' => 'Wyróżnieni artyści',
+                'description' => 'Dzięki twojemu wsparciu możemy kontaktować się ze świetnymi artystami, aby osu! zyskało jeszcze więcej niesamowitej licencjonowanej muzyki!',
+                'link_text' => 'Pokaż aktualną listę artystów &raquo;',
+            ],
+            'ads' => [
+                'title' => 'Samowystarczalność',
+                'description' => 'Twoje wsparcie pozwala utrzymać osu! wolne od reklam i zewnętrznych sponsorów.',
+            ],
+            'tournaments' => [
+                'title' => 'Oficjalne turnieje',
+                'description' => 'Pomóż finansować organizację i nagrody dla oficjalnych turniejów osu! World Cup.',
+                'link_text' => 'Przeglądaj turnieje &raquo;',
+            ],
+            'bounty-program' => [
+                'title' => 'Program nagradzania ochotników',
+                'description' => 'Wspomóż ochotników, którzy poświęcają swój czas, aby uczynić osu! lepszą grą.',
+                'link_text' => 'Dowiedz się więcej &raquo;',
             ],
         ],
-
         'perks' => [
-            'title' => 'Tak? Co dostaję?!',
+            'title' => 'Bajer! Co dostaję?',
             'osu_direct' => [
                 'title' => 'osu!direct',
-                'description' => 'szybki i łatwy dostęp do beatmap bez opuszczania gry.',
+                'description' => 'Szybki i łatwy dostęp do beatmap bez potrzeby opuszczania gry.',
+            ],
+
+            'friend_ranking' => [
+                'title' => 'Ranking znajomych',
+                'description' => "Sprawdź, gdzie plasujesz się w rywalizacji ze znajomymi na liście wyników beatmapy zarówno na stronie, jak i w grze.",
+            ],
+
+            'country_ranking' => [
+                'title' => 'Ranking krajowy',
+                'description' => 'Podbij swój kraj, zanim podbijesz cały świat.',
+            ],
+
+            'mod_filtering' => [
+                'title' => 'Filtrowanie według modyfikatorów',
+                'description' => 'Chcesz widzieć tylko graczy HDHR? Nie ma problemu!',
             ],
 
             'auto_downloads' => [
                 'title' => 'Automatyczne pobieranie',
-                'description' => 'Automatyczne pobieranie podczas grania multiplayer, oglądania kogoś lub klikania linków w czacie!',
+                'description' => 'Automatyczne pobieranie podczas grania w trybie wieloosobowym, oglądania kogoś czy klikania linków na czacie!',
             ],
 
             'upload_more' => [
                 'title' => 'Dodawaj więcej',
-                'description' => 'Więcej slotów na nowe mapy (za każdą ranked mapę) ograniczone do 10.',
+                'description' => 'Więcej slotów na nowe beatmapy (za każdą rankingową beatmapę) ograniczone do 10.',
             ],
 
             'early_access' => [
                 'title' => 'Wczesny dostęp',
-                'description' => 'Dostęp do wczesnych wersji, gdzie możesz wypróbować nowe opcje zanim będą dostępne publicznie!',
+                'description' => 'Uzyskaj dostęp do wczesnych wersji nowych funkcji, zanim zostaną one upublicznione (w tym do tych na stronie)!',
             ],
 
             'customisation' => [
                 'title' => 'Personalizacja',
-                'description' => 'Spersonalizuj swój profil poprzez w pełni modyfikowalną stronę.',
+                'description' => "Wyróżnij się z tłumu dzięki niestandardowemu obrazowi tła lub tworząc w pełni dowolną stronę „O mnie” ze swojego profilu użytkownika.",
             ],
 
             'beatmap_filters' => [
                 'title' => 'Filtry beatmap',
-                'description' => 'Filtruj wyszukiwania beatmap przez osiągnięty wynik.',
+                'description' => 'Filtruj wyniki wyszukiwania beatmap według zagranych i niezagranych lub osiągniętego wyniku.',
             ],
 
             'yellow_fellow' => [
@@ -89,7 +116,7 @@ return [
 
             'change_username' => [
                 'title' => 'Zmiana nicku',
-                'description' => 'Możliwość zmiany nicku bez dodatkowych kosztów (tylko raz)',
+                'description' => 'Jednorazowa darmowa zmiana nazwy użytkownika przy pierwszym zakupie.',
             ],
 
             'skinnables' => [
@@ -104,25 +131,33 @@ return [
 
             'sort_options' => [
                 'title' => 'Sortowanie',
-                'description' => 'NOWE: Możliwość przeglądania rankingu krajowego / znajomych / poszczególnego moda w grze.',
+                'description' => 'Możliwość przeglądania rankingu krajowego, znajomych oraz dla wybranych przez ciebie modów w grze.',
             ],
 
-            'feel_special' => [
-                'title' => 'Uczucie wyjątkowości',
-                'description' => 'Wspaniałe uczucie pochodzące z wspomagania osu!',
+            'more_favourites' => [
+                'title' => 'Zwiększony limit ulubionych beatmap',
+                'description' => 'Maksymalna liczba beatmap, które możesz dodać do ulubionych, zostaje zwiększona z :normally do :supporter.',
+            ],
+            'more_friends' => [
+                'title' => 'Zwiększony limit znajomych',
+                'description' => 'Maksymalna liczba znajomych zostaje zwiększona z :normally do :supporter.',
+            ],
+            'more_beatmaps' => [
+                'title' => 'Zwiększony limit przesyłanych beatmap',
+                'description' => 'Maksymalna liczba posiadanych beatmap nierankingowych jest obliczana na podstawie wartości bazowej, do której dolicza się premię za każdą rankingową beatmapę, jaką masz na koncie (do pewnej granicy).<br/><br/>Zazwyczaj jest to 4 plus 1 (maks. 2) za każdą rankingową beatmapę. Mając status donatora, ta wartość jest zwiększona do 8 plus 1 (maks 12) za każdą rankingową beatmapę.',
+            ],
+            'friend_filtering' => [
+                'title' => 'Rankingi znajomych',
+                'description' => 'Rywalizuj ze swoimi znajomymi i zobacz, jak ci idzie!*<br/><br/><small>* funkcja jeszcze niedostępna na nowej stronie</small>',
             ],
 
-            'more_to_come' => [
-                'title' => 'Więcej w przyszłości',
-                'description' => '',
-            ],
         ],
-
-        'convinced' => [
-            'title' => 'Zachęciłeś mnie! :D',
-            'support' => 'wspomóż osu!',
-            'gift' => 'albo podaruj supportera innemu graczowi',
-            'instructions' => 'kliknij ikonę serca, aby przejść do sklepu osu!',
+        'supporter_status' => [
+            'contribution' => 'Dziękujemy za twoje dotychczasowe wsparcie! Otrzymaliśmy od ciebie łącznie :dollars pochodzących z :tags zakupionych statusów donatora!',
+            'gifted' => "Ze wszystkich zakupionych statusów donatora, :giftedTags podarowano innym użytkownikom (za łączną wartość :giftedDollars). Wspaniała szczodrość!",
+            'not_yet' => "Nie masz jeszcze statusu donatora osu! :(",
+            'valid_until' => 'Twój status donatora przestanie być aktywny :date!',
+            'was_valid_until' => 'Twój status donatora przestał być aktywny :date.',
         ],
     ],
 ];

@@ -1,5 +1,5 @@
 ###
-#    Copyright 2015-2017 ppy Pty. Ltd.
+#    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 #
 #    This file is part of osu!web. osu!web is distributed with the hope of
 #    attracting more community contributions to the core ecosystem of osu!.
@@ -16,55 +16,72 @@
 #    along with osu!web.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
-{button, div, p} = React.DOM
+import { ExtraHeader } from './extra-header'
+import { UserPageEditor } from './user-page-editor'
+import * as React from 'react'
+import { a, button, div, span, p } from 'react-dom-factories'
+import { StringWithComponent } from 'string-with-component'
 el = React.createElement
 
-class ProfilePage.UserPage extends React.Component
+export class UserPage extends React.Component
   render: =>
-    div className: 'page-extra',
-      el ProfilePage.ExtraHeader, name: @props.name, withEdit: @props.withEdit
+    isBlank = @props.userPage.initialRaw.trim() == ''
+    canEdit = @props.withEdit || window.currentUser.is_moderator || window.currentUser.is_admin
 
-      if !@props.userPage.editing && @props.withEdit && @props.userPage.html != ''
+    div className: 'page-extra page-extra--userpage',
+      el ExtraHeader, name: @props.name, withEdit: @props.withEdit
+
+      if !@props.userPage.editing && canEdit && !isBlank
         div className: 'page-extra__actions',
           button
-            className: 'btn-circle btn-circle--button'
+            type: 'button'
+            title: osu.trans('users.show.page.button')
+            className: 'profile-page-toggle'
             onClick: @editStart
-            el Icon, name: 'edit'
+            span className: 'fas fa-pencil-alt'
 
       if @props.userPage.editing
-        el ProfilePage.UserPageEditor, userPage: @props.userPage
-      else if @props.withEdit && @props.userPage.html == ''
-        @pageNew()
+        el UserPageEditor, userPage: @props.userPage, user: @props.user
       else
-        @pageShow()
+        div className: 'page-extra__content-overflow-wrapper-outer u-fancy-scrollbar',
+          if @props.withEdit && isBlank
+            @pageNew()
+          else
+            div className: 'page-extra__content-overflow-wrapper-inner',
+              @pageShow()
 
 
-  editStart: (e) ->
-    e.preventDefault()
+  editStart: ->
     $.publish 'user:page:update', editing: true
 
 
   pageNew: =>
-    div className: 'text-center',
+    div className: 'profile-extra-user-page profile-extra-user-page--new',
       button
-        className: 'profile-extra-user-page__new-content   btn-osu btn-osu--lite btn-osu--profile-page-edit'
+        className: 'profile-extra-user-page__new-content  btn-osu btn-osu--lite btn-osu--profile-page-edit'
         onClick: @editStart
-        disabled: !@props.user.isSupporter
+        disabled: !@props.user.has_supported
         osu.trans 'users.show.page.edit_big'
 
       p className: 'profile-extra-user-page__new-content profile-extra-user-page__new-content--icon',
-        el Icon, name: 'pencil-square-o'
+        span className: 'fas fa-edit'
 
       p
         className: 'profile-extra-user-page__new-content'
         dangerouslySetInnerHTML:
           __html: osu.trans 'users.show.page.description'
 
-      if !@props.user.isSupporter
+      if !@props.user.has_supported
         p
           className: 'profile-extra-user-page__new-content'
-          dangerouslySetInnerHTML:
-            __html: osu.trans 'users.show.page.restriction_info'
+          el StringWithComponent,
+            mappings:
+              ':link': a
+                href: laroute.route('store.products.show', product: 'supporter-tag')
+                key: 'link'
+                target: '_blank'
+                osu.trans 'users.show.page.restriction_info.link'
+            pattern: osu.trans 'users.show.page.restriction_info._'
 
 
   pageShow: =>

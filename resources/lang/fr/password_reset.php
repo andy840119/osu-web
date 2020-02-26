@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -19,25 +19,19 @@
  */
 
 return [
-    'title' => 'Réinitialiser le mot de passe',
-
     'button' => [
         'cancel' => 'Annuler',
-        'resend' => "Renvoyer l'email de vérification",
-        'set' => 'Définit le mot de passe',
+        'resend' => 'Renvoyer l\'email de vérification',
+        'set' => 'Définir le mot de passe',
         'start' => 'Démarrer',
-    ],
-
-    'email' => [
-        'subject' => 'Récupération de compte osu!',
     ],
 
     'error' => [
         'contact_support' => 'Veuillez contacter le support pour récupérer votre compte.',
         'is_privileged' => 'Contacter peppy lulz.',
         'missing_key' => 'Requis.',
-        'too_many_tries' => "Trop de tentatives soldées d'échecs.",
-        'user_not_found' => "L'utilisateur demandé n'existe pas.",
+        'too_many_tries' => 'Trop de tentatives ratées.',
+        'user_not_found' => 'L\'utilisateur demandé n\'existe pas.',
         'wrong_key' => 'Code incorrect.',
     ],
 
@@ -54,6 +48,11 @@ return [
     ],
 
     'starting' => [
-        'username' => "Entrez une adresse email ou un nom d'utilisateur",
+        'username' => 'Entrez une adresse email ou un nom d\'utilisateur',
+
+        'support' => [
+            '_' => 'Vous avez besoin d\'aide supplémentaire ? Contactez-nous via notre :button.',
+            'button' => 'système de support',
+        ],
     ],
 ];

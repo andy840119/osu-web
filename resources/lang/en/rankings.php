@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -19,13 +19,24 @@
  */
 
 return [
-    'header' => ':type Ranking',
-    'type' => [
-        'performance' => 'Performance',
-        'charts' => 'Charts',
-        'score' => 'Score',
-        'country' => 'Country',
+    'country' => [
+        'filter' => 'filtered by country',
     ],
+
+    'type' => [
+        'performance' => 'performance',
+        'charts' => 'spotlights',
+        'score' => 'score',
+        'country' => 'country',
+    ],
+
+    'spotlight' => [
+        'end_date' => 'End Date',
+        'map_count' => 'Map Count',
+        'participants' => 'Participants',
+        'start_date' => 'Start Date',
+    ],
+
     'stat' => [
         'accuracy' => 'Accuracy',
         'active_users' => 'Active Users',

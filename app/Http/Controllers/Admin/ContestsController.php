@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -27,20 +27,23 @@ class ContestsController extends Controller
 {
     public function index()
     {
-        $contests = Contest::orderBy('id', 'desc')->get();
-
-        return view('admin.contests.index')
-          ->with('contests', $contests);
+        return ext_view('admin.contests.index', [
+            'contests' => Contest::orderBy('id', 'desc')->get(),
+        ]);
     }
 
     public function show($id)
     {
         $contest = Contest::findOrFail($id);
-        $entries = UserContestEntry::where('contest_id', $id)->with('user')->get();
+        $entries = UserContestEntry::withTrashed()
+            ->where('contest_id', $id)
+            ->with('user')
+            ->get();
 
-        return view('admin.contests.show')
-          ->with('contest', $contest)
-          ->with('entries', $entries);
+        return ext_view('admin.contests.show', [
+            'contest' => $contest,
+            'entries' => json_collection($entries, 'UserContestEntry', ['user']),
+        ]);
     }
 
     public function gimmeZip($id)
@@ -62,14 +65,14 @@ class ContestsController extends Controller
                 mkdir($outputFolder, 0755, true);
             }
 
-            // fetch entries
+            // fetch 'em
             foreach ($entries as $entry) {
                 $targetDir = "{$workingFolder}/".($entry->user ?? (new \App\Models\DeletedUser))->username." ({$entry->user_id})/";
                 if (!is_dir($targetDir)) {
                     mkdir($targetDir, 0755, true);
                 }
 
-                copy($entry->fileUrl(), "{$targetDir}/".sanitize_filename($entry->original_filename));
+                copy($entry->fileUrl(), $targetDir.sanitize_filename($entry->original_filename));
             }
 
             // zip 'em
@@ -84,7 +87,7 @@ class ContestsController extends Controller
             }
             $zip->close();
 
-            // send 'em on their way
+            // send 'em
             header('Content-Disposition: attachment; filename='.basename($zipOutput));
             header('Content-Type: application/zip');
             header('Expires: 0');

@@ -1,5 +1,5 @@
 ###
-#    Copyright 2015-2017 ppy Pty. Ltd.
+#    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 #
 #    This file is part of osu!web. osu!web is distributed with the hope of
 #    attracting more community contributions to the core ecosystem of osu!.
@@ -16,27 +16,43 @@
 #    along with osu!web.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
-{a, div, h1, h2, p} = React.DOM
+import { BeatmapList } from './beatmap-list'
+import { BigButton } from 'big-button'
+import { Nominations } from './nominations'
+import { Subscribe } from './subscribe'
+import { UserFilter } from './user-filter'
+import { BeatmapBasicStats } from 'beatmap-basic-stats'
+import { BeatmapsetMapping } from 'beatmapset-mapping'
+import HeaderV4 from 'header-v4'
+import { PlaymodeTabs } from 'playmode-tabs'
+import * as React from 'react'
+import { a, div, h1, h2, p } from 'react-dom-factories'
 el = React.createElement
 
-BeatmapDiscussions.Header = React.createClass
-  mixins: [React.addons.PureRenderMixin]
-
-
-  componentDidMount: ->
+export class Header extends React.PureComponent
+  componentDidMount: =>
     @updateChart()
 
 
-  componentDidUpdate: ->
+  componentDidUpdate: =>
     @updateChart()
 
 
-  componentWillUnmount: ->
+  componentWillUnmount: =>
     $(window).off '.beatmapDiscussionsOverview'
 
 
-  render: ->
-    div null,
+  render: =>
+    el React.Fragment, null,
+      el HeaderV4,
+        section: osu.trans('layout.header.beatmapsets._')
+        subSection: osu.trans('layout.header.beatmapsets.discussions')
+        theme: 'beatmapsets'
+        titleAppend: el PlaymodeTabs,
+          currentMode: @props.currentBeatmap.mode
+          beatmaps: @props.beatmaps
+          counts: @props.currentDiscussions.countsByPlaymode
+
       div
         className: 'osu-page'
         @headerTop()
@@ -46,35 +62,47 @@ BeatmapDiscussions.Header = React.createClass
         @headerBottom()
 
 
-  headerBottom: ->
+  headerBottom: =>
     bn = 'beatmap-discussions-header-bottom'
 
     div className: bn,
+      div className: "#{bn}__content #{bn}__content--details",
+        div className: "#{bn}__details #{bn}__details--full",
+          el BeatmapsetMapping,
+            beatmapset: @props.beatmapset
+            user: @props.users[@props.beatmapset.user_id]
+
+        div className: "#{bn}__details",
+          el Subscribe, beatmapset: @props.beatmapset
+
+        div className: "#{bn}__details",
+          el BigButton,
+            modifiers: ['full']
+            text: osu.trans('beatmaps.discussions.beatmap_information')
+            icon: 'fas fa-info'
+            props:
+              href: laroute.route('beatmapsets.show', beatmapset: @props.beatmapset.id)
+
       div className: "#{bn}__content #{bn}__content--nomination",
-        el BeatmapDiscussions.Nominations,
+        el Nominations,
           beatmapset: @props.beatmapset
+          currentDiscussions: @props.currentDiscussions
           currentUser: @props.currentUser
-
-      div className: "#{bn}__content #{bn}__content--mapping",
-        el BeatmapsetMapping,
-          beatmapset: @props.beatmapset
-          user: @props.users[@props.beatmapset.user_id]
+          discussions: @props.discussions
+          events: @props.events
+          users: @props.users
 
 
-  headerTop: ->
+  headerTop: =>
     bn = 'beatmap-discussions-header-top'
 
     div
       className: bn
 
-      el PlaymodeTabs,
-        currentMode: @props.currentBeatmap.mode
-        beatmaps: @props.beatmaps
-
       div
         className: "#{bn}__content"
         style:
-          backgroundImage: "url('#{@props.beatmapset.covers.cover}')"
+          backgroundImage: osu.urlPresence(@props.beatmapset.covers.cover)
 
         a
           className: "#{bn}__title-container"
@@ -89,35 +117,57 @@ BeatmapDiscussions.Header = React.createClass
         div
           className: "#{bn}__filters"
 
-          el BeatmapDiscussions.BeatmapList,
-            currentBeatmap: @props.currentBeatmap
-            beatmaps: @props.beatmaps[@props.currentBeatmap.mode]
+          div
+            className: "#{bn}__filter-group"
+            el BeatmapList,
+              beatmapset: @props.beatmapset
+              currentBeatmap: @props.currentBeatmap
+              currentDiscussions: @props.currentDiscussions
+              beatmaps: @props.beatmaps[@props.currentBeatmap.mode]
 
           div
-            className: "#{bn}__stats"
-            @stats()
+            className: "#{bn}__filter-group #{bn}__filter-group--stats"
+            el UserFilter,
+              ownerId: @props.beatmapset.user_id
+              selectedUser: if @props.selectedUserId? then @props.users[@props.selectedUserId] else null
+              users: @props.discussionStarters
+
+            div
+              className: "#{bn}__stats"
+              @stats()
 
         div null,
           div ref: 'chartArea', className: "#{bn}__chart"
 
           div className: "#{bn}__beatmap-stats",
-            el BeatmapBasicStats,
-              beatmapset: @props.beatmapset
-              beatmap: @props.currentBeatmap
+            el BeatmapBasicStats, beatmap: @props.currentBeatmap
 
 
-  stats: ->
+  setFilter: (e) =>
+    e.preventDefault()
+    $.publish 'beatmapsetDiscussions:update', filter: e.currentTarget.dataset.type
+
+
+  stats: =>
     bn = 'counter-box'
 
-    for type in ['mine', 'resolved', 'pending', 'praises', 'deleted', 'total']
-      continue if type == 'deleted' && !@props.currentUser.isAdmin
+    for type in ['mine', 'mapperNotes', 'resolved', 'pending', 'praises', 'deleted', 'total']
+      continue if type == 'deleted' && !@props.currentUser.is_admin
 
-      topClasses = "#{bn} #{bn}--beatmap-discussions #{bn}--#{type}"
-      topClasses += ' js-active' if @props.mode == 'timeline' && @props.currentFilter == type
+      topClasses = "#{bn} #{bn}--beatmap-discussions #{bn}--#{_.kebabCase(type)}"
+      topClasses += ' js-active' if @props.mode != 'events' && @props.currentFilter == type
+
+      total = 0
+      for own _mode, discussions of @props.currentDiscussions.byFilter[type]
+        total += _.size(discussions)
 
       a
         key: type
-        href: '#'
+        href: BeatmapDiscussionHelper.url
+          filter: type
+          beatmapsetId: @props.beatmapset.id
+          beatmapId: @props.currentBeatmap.id
+          mode: @props.mode
         className: topClasses
         'data-type': type
         onClick: @setFilter
@@ -126,15 +176,15 @@ BeatmapDiscussions.Header = React.createClass
           className: "#{bn}__content"
           div
             className: "#{bn}__title"
-            osu.trans("beatmaps.discussions.stats.#{type}")
+            osu.trans("beatmaps.discussions.stats.#{_.snakeCase(type)}")
           div
             className: "#{bn}__count"
-            _.size(@props.currentDiscussions.timelineByFilter[type])
+            total
 
         div className: "#{bn}__line"
 
 
-  updateChart: ->
+  updateChart: =>
     if !@_chart?
       area = @refs.chartArea
       length = @props.currentBeatmap.total_length * 1000
@@ -143,9 +193,4 @@ BeatmapDiscussions.Header = React.createClass
 
       $(window).on 'throttled-resize.beatmapDiscussionsOverview', @_chart.resize
 
-    @_chart.loadData _.values(@props.currentDiscussions.timelineByFilter[@props.currentFilter])
-
-
-  setFilter: (e) ->
-    e.preventDefault()
-    $.publish 'beatmapDiscussion:filter', filter: e.currentTarget.dataset.type
+    @_chart.loadData _.values(@props.currentDiscussions.byFilter[@props.currentFilter].timeline)

@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -21,9 +21,71 @@
 return [
     'authorizations' => [
         'update' => [
-            'null_user' => 'Musisz być zalogowany, aby edytować post.',
-            'system_generated' => 'Automatycznie generowane posty nie mogą być edytowane.',
-            'wrong_user' => 'Musisz być autorem posta, aby go edytować.',
+            'null_user' => 'Musisz się zalogować, aby zedytować post.',
+            'system_generated' => 'Nie możesz edytować automatycznie wygenerowanych postów.',
+            'wrong_user' => 'Tylko autor posta może go zedytować.',
+        ],
+    ],
+
+    'events' => [
+        'empty' => 'Nic się nie wydarzyło... jeszcze.',
+    ],
+
+    'index' => [
+        'deleted_beatmap' => 'usunięta',
+        'title' => 'dyskusje',
+
+        'form' => [
+            '_' => 'Szukaj',
+            'deleted' => 'Uwzględnij usunięte dyskusje',
+            'only_unresolved' => 'Pokaż tylko nierozwiązane dyskusje',
+            'types' => 'Rodzaj wiadomości',
+            'username' => 'Nazwa użytkownika',
+
+            'beatmapset_status' => [
+                '_' => 'Status beatmapy',
+                'all' => 'Wszystkie',
+                'disqualified' => 'Zdyskwalifikowana',
+                'never_qualified' => 'Nigdy nie zakwalifikowana',
+                'qualified' => 'Zakwalifikowana',
+                'ranked' => 'Rankingowa',
+            ],
+
+            'user' => [
+                'label' => 'Użytkownik',
+                'overview' => 'Całokształt aktywności',
+            ],
+        ],
+    ],
+
+    'item' => [
+        'created_at' => 'Data utworzenia',
+        'deleted_at' => 'Data usunięcia',
+        'message_type' => 'Typ',
+        'permalink' => 'Odnośnik bezpośredni',
+    ],
+
+    'nearby_posts' => [
+        'confirm' => 'Żaden z tych postów nie jest istotny',
+        'notice' => 'Istnieją posty dotyczące :timestamp (:existing_timestamps). Sprawdź je przed opublikowaniem posta.',
+    ],
+
+    'reply' => [
+        'open' => [
+            'guest' => 'Zaloguj się, aby odpowiedzieć',
+            'user' => 'Odpowiedz',
+        ],
+    ],
+
+    'review' => [
+        'go_to_parent' => 'Zobacz recenzję',
+        'go_to_child' => 'Zobacz dyskusję',
+        'validation' => [
+            'invalid_block_type' => '',
+            'invalid_document' => '',
+            'minimum_issues' => '',
+            'missing_text' => '',
+            'too_many_blocks' => '',
         ],
     ],
 
@@ -32,5 +94,15 @@ return [
             'true' => 'Oznaczone jako gotowe przez :user',
             'false' => 'Otworzone ponownie przez :user',
         ],
+    ],
+
+    'timestamp_display' => [
+        'general' => 'główne',
+        'general_all' => 'główne (wszystkie)',
+    ],
+
+    'user_filter' => [
+        'everyone' => 'Wszyscy',
+        'label' => 'Filtruj według użytkownika',
     ],
 ];

@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -19,12 +19,10 @@
  */
 
 return [
+    'months' => 'mois',
+
     'user_search' => [
         'searching' => 'recherche en cours...',
         'not_found' => "Cet utilisateur n'existe pas",
-    ],
-    'duration' => [
-        'months' => ':length mois|:length mois|{0}',
-        'years' => ':length année|:length années|{0}',
     ],
 ];

@@ -1,5 +1,5 @@
 {{--
-    Copyright 2015-2017 ppy Pty. Ltd.
+    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 
     This file is part of osu!web. osu!web is distributed with the hope of
     attracting more community contributions to the core ecosystem of osu!.
@@ -15,33 +15,66 @@
     You should have received a copy of the GNU Affero General Public License
     along with osu!web.  If not, see <http://www.gnu.org/licenses/>.
 --}}
-@extends("master")
+@extends('master', [
+    'currentSection' => 'community',
+    'currentAction' => 'tournaments',
+    'title' => trans('tournament.index.header.title'),
+])
 
-@section("content")
-<div class="osu-layout__row osu-layout__row--page-compact">
-    <div class="osu-page-header osu-page-header--tournaments">
-        <h1 class="osu-page-header__title">osu!tournaments</h1>
-        <h2 class="osu-page-header__title osu-page-header__title--small">A listing of all active officially-recognised tournaments</h2>
+@section('content')
+    @include('layout._page_header_v4', ['params' => [
+        'links' => [['title' => trans('layout.header.tournaments.index'), 'url' => route('tournaments.index')]],
+        'linksBreadcrumb' => true,
+        'section' => trans('layout.header.tournaments._'),
+        'subSection' => trans('layout.header.tournaments.index'),
+        'theme' => 'tournaments',
+    ]])
+
+    <div class="osu-page">
+        <div class="tournament-list">
+            @foreach($listing as $state => $tournaments)
+                @if($tournaments->isEmpty())
+                    @if($state === 'current')
+                        <h1 class="tournament-list__heading">{{trans("tournament.index.state.$state")}}</h1>
+                        <p class="tournament-list__none-running">{{trans('tournament.index.none_running')}}</p>
+                    @endif
+                @else
+                    <h1 class="tournament-list__heading">{{trans("tournament.index.state.$state")}}</h1>
+                    <div class="tournament-list__group{{$state == 'previous' ? ' tournament-list__group--old' : ''}}">
+                    @foreach($tournaments as $t)
+                        <a href="{{ route('tournaments.show', $t) }}" class='tournament-list-item{{$state == 'previous' ? ' tournament-list-item--old' : ''}}'>
+                            <div class='tournament-list-item__image-wrapper'>
+                                <img class='tournament-list-item__image'
+                                    src="{{$t->header_banner}}"
+                                    srcSet="{{$t->header_banner}} 1x, {{retinaify($t->header_banner)}} 2x">
+                            </div>
+                            <div class='tournament-list-item__metadata'>
+                                <div class='tournament-list-item__metadata-left'>
+                                    <div class='tournament-list-item__tournament-date'>{{
+                                        trans('tournament.tournament_period', [
+                                            'start' => i18n_date($t->start_date),
+                                            'end' => i18n_date($t->end_date),
+                                        ])
+                                    }}</div>
+                                    <div class='tournament-list-item__registration-date'>{{
+                                        trans('tournament.index.registration_period', [
+                                            'start' => i18n_date($t->signup_open),
+                                            'end' => i18n_date($t->signup_close)
+                                        ])
+                                    }}</div>
+                                </div>
+                                <div class='tournament-list-item__metadata-right'>
+                                    <div class='tournament-list-item__registrations'>
+                                        {{ i18n_number_format($t->registrations->count()) }}
+                                        <i class="fas fa-fw fa-users" title="{{ trans('tournament.index.item.registered') }}"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    @endforeach
+                    </div>
+                @endif
+            @endforeach
+        </div>
     </div>
-</div>
-
-<div class='osu-layout__row osu-layout__row--page tournaments'>
-
-@foreach($tournaments as $t)
-<div class='tournament clickable-row'>
-    <div class='mode'>
-        <i class="fa osu fa-{!! $t->playModeStr() !!}-o"></i>
-    </div>
-    <div class='info'>
-        <div class='title'>{{ $t->name }}</div>
-        <div class='dates-tournament'>{{ $t->start_date->toDateString() }} ~ {{ $t->end_date->toDateString() }}</div>
-        <div class='dates-reg'>Registrations open {{ $t->signup_open->toDateString() }} through {{ $t->signup_close->toDateString() }}</div>
-
-        <div><a href='{{ route("tournaments.show", $t) }}' class='clickable-row-link'>{{ number_format($t->registrations->count()) }} registered player(s).</a></div>
-    </div>
-</div>
-@endforeach
-
-</div>
-
-@stop
+@endsection

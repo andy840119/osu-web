@@ -1,5 +1,5 @@
 ###
-#    Copyright 2015-2017 ppy Pty. Ltd.
+#    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 #
 #    This file is part of osu!web. osu!web is distributed with the hope of
 #    attracting more community contributions to the core ecosystem of osu!.
@@ -16,26 +16,26 @@
 #    along with osu!web.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
-{button, div, span} = React.DOM
+import * as React from 'react'
+import { button, div, span } from 'react-dom-factories'
 el = React.createElement
 
 bn = 'beatmap-discussion-system-post'
 
-BeatmapDiscussions.SystemPost = React.createClass
-  mixins: [React.addons.PureRenderMixin]
+export SystemPost = (props) ->
+  message =
+    switch props.post.message.type
+      when 'resolved'
+        osu.trans "beatmap_discussions.system.resolved.#{props.post.message.value}",
+          user: osu.link laroute.route('users.show', user: props.user.id), props.user.username,
+            classNames: ["#{bn}__user"]
 
+  topClass = "#{bn} #{bn}--#{props.post.message.type}"
+  topClass += " #{bn}--deleted" if props.post.deleted_at
 
-  render: ->
-    message =
-      switch @props.post.message.type
-        when 'resolved'
-          osu.trans "beatmap_discussions.system.resolved.#{@props.post.message.value}",
-            user: osu.link laroute.route('users.show', user: @props.user.id), @props.user.username,
-              classNames: ["#{bn}__user"]
-
+  div
+    className: topClass
     div
-      className: "#{bn} #{bn}--#{@props.post.message.type}"
-      div
-        className: "#{bn}__content"
-        dangerouslySetInnerHTML:
-          __html: message
+      className: "#{bn}__content"
+      dangerouslySetInnerHTML:
+        __html: message

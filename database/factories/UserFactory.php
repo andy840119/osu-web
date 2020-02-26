@@ -18,14 +18,14 @@ $factory->define(App\Models\User::class, function (Faker\Generator $faker) {
     // Check username doesn't already exist
     while ($username === null) {
         if (!in_array($uname = $faker->userName, $existing_names, true)) {
-            $username = str_replace('.', ' ', $uname); // remove fullstops from username
+            $username = substr(str_replace('.', ' ', $uname), 0, 15); // remove fullstops from username
         }
     }
 
     // Generate a random unique ID
     $userid = null;
     while ($userid === null) {
-        if (!in_array($uid = rand(1, 600000), $existing_ids, true)) {
+        if (!in_array($uid = rand(2, 600000), $existing_ids, true)) {
             $userid = $uid;
         }
     }
@@ -40,13 +40,18 @@ $factory->define(App\Models\User::class, function (Faker\Generator $faker) {
         $country_ac = '';
     }
 
+    // cache password hash to speed up tests (by not repeatedly calculating the same hash over and over)
+    static $password = null;
+    if ($password === null) {
+        $password = password_hash(md5('password'), PASSWORD_BCRYPT);
+    }
+
     return [
         'username' => $username,
-        'username_clean' => $username,
         'user_id' => $userid,
-        'user_password' => password_hash(md5('password'), PASSWORD_BCRYPT),
+        'user_password' => $password,
         'user_email' => $faker->safeEmail,
-        'user_lastvisit' => rand(1451606400, time()), // random timestamp between 01/01/2016 and now
+        'user_lastvisit' => time(),
         'user_posts' => rand(1, 500),
         'user_warnings' => 0,
         'user_type' => 0,
@@ -58,10 +63,35 @@ $factory->define(App\Models\User::class, function (Faker\Generator $faker) {
         'user_website' => 'http://www.google.com/',
         'user_twitter' => 'ppy',
         'user_permissions' => '',
-        'user_interests' => $faker->bs,
-        'user_occ' => $faker->catchPhrase,
-        'user_sig' => $faker->realText(155),
-        'user_from' => $faker->country,
+        'user_interests' => substr($faker->bs, 30),
+        'user_occ' => substr($faker->catchPhrase, 30),
+        'user_sig' => function () use ($faker) {
+            // avoids running if user_sig is supplied.
+            return $faker->realText(155);
+        },
+        'user_from' => substr($faker->country, 30),
         'user_regdate' => $faker->dateTimeBetween('-6 years', 'now'),
     ];
+});
+
+$factory->state(App\Models\User::class, 'bng', function (Faker\Generator $faker) {
+    return [
+        'group_id' => app('groups')->byIdentifier('bng')->getKey(),
+    ];
+});
+
+$factory->state(App\Models\User::class, 'restricted', function (Faker\Generator $faker) {
+    return [
+        'user_warnings' => 1,
+    ];
+});
+
+$factory->afterCreatingState(App\Models\User::class, 'bng', function ($user, $faker) {
+    $user->userGroups()->create(['group_id' => app('groups')->byIdentifier('bng')->getKey()]);
+});
+
+$factory->afterCreatingState(App\Models\User::class, 'silenced', function ($user, $faker) {
+    $user->accountHistories()->save(
+        factory(App\Models\UserAccountHistory::class)->states('silence')->make()
+    );
 });

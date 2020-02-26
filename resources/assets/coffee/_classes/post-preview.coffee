@@ -1,5 +1,5 @@
 ###
-#    Copyright 2015-2017 ppy Pty. Ltd.
+#    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 #
 #    This file is part of osu!web. osu!web is distributed with the hope of
 #    attracting more community contributions to the core ecosystem of osu!.
@@ -18,19 +18,34 @@
 
 class @PostPreview
   constructor: ->
-    $(document).on 'input', '.js-post-preview--auto', _.debounce(@loadPreview, 500)
+    @debouncedLoadPreview = _.debounce @loadPreview, 500
+
+    $(document).on 'input', '.js-post-preview--auto', (e) =>
+      # get the target immediately because event object may change later.
+      @debouncedLoadPreview(e.currentTarget)
 
 
-  loadPreview: (e) =>
-    $form = $(e.target).closest('form')
-    url = laroute.route('bbcode-preview')
-    body = e.currentTarget.value
-    $preview = $form.find('.js-post-preview--body')
+  loadPreview: (target) =>
+    $form = $(target).closest('form')
+    body = target.value
+    $preview = $form.find('.js-post-preview--preview')
+    preview = $preview[0]
     $previewBox = $form.find('.js-post-preview--box')
 
-    return if $preview.attr('data-raw') == body
+    if !preview?
+      return
 
-    $.post(url, text: body)
+    preview._xhr?.abort()
+
+    if body == ''
+      $previewBox.addClass 'hidden'
+      return
+
+    if $preview.attr('data-raw') == body
+      $previewBox.removeClass 'hidden'
+      return
+
+    preview._xhr = $.post(laroute.route('bbcode-preview'), text: body)
     .done (data) =>
       $preview.html data
       $preview.attr 'data-raw', body

@@ -1,5 +1,5 @@
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -40,8 +40,10 @@
   }
 
   .grid--gutters > & {
-    padding-left: @flex-grid--gutter-width;
-    padding-right: @flex-grid--gutter-width;
+    @media @desktop {
+      padding-left: @flex-grid--gutter-width;
+      padding-right: @flex-grid--gutter-width;
+    }
   }
 
   .grid--row-gaps > & {
@@ -58,10 +60,5 @@
   // size to let other cells expand and fill the gap.
   &--squash {
     flex: 0 1 0%;
-  }
-
-  // very specific store supporter-tag
-  &--store-user-search {
-    margin: 0 0 8px 0;
   }
 }

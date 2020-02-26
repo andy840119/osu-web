@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -20,123 +20,119 @@
 
 namespace App\Libraries;
 
+use App\Exceptions\UserVerificationException;
 use App\Mail\UserVerification as UserVerificationMail;
 use App\Models\Country;
-use App\Models\LegacySession;
-use Carbon\Carbon;
+use App\Models\LoginAttempt;
+use Datadog;
 use Mail;
 
 class UserVerification
 {
-    const VERIFIED = 10;
+    private $request;
+    private $state;
+    private $user;
 
-    protected $user;
+    public static function fromCurrentRequest()
+    {
+        $verification = request()->attributes->get('user_verification');
 
-    private $_legacySession = false;
+        if ($verification === null) {
+            $verification = new static(
+                auth()->user(),
+                request(),
+                UserVerificationState::fromCurrentRequest()
+            );
+            request()->attributes->set('user_verification', $verification);
+        }
 
-    public function __construct($user, $request)
+        return $verification;
+    }
+
+    public static function logAttempt(string $source, string $type, string $reason = null): void
+    {
+        Datadog::increment(
+            config('datadog-helper.prefix_web').'.verification.attempts',
+            1,
+            compact('reason', 'source', 'type')
+        );
+    }
+
+    private function __construct($user, $request, $state)
     {
         $this->user = $user;
         $this->request = $request;
+        $this->state = $state;
     }
 
     public function initiate()
     {
+        // Workaround race condition causing $this->issue() to be called in parallel.
+        // Mainly observed when logging in as privileged user.
+        if ($this->request->ajax() && $this->request->is('home/notifications')) {
+            return response(['error' => 'verification'], 401);
+        }
+
         $email = $this->user->user_email;
 
-        if (!present($this->request->session()->get('verification_key'))) {
+        if (!$this->state->issued()) {
+            static::logAttempt('input', 'new');
+
             $this->issue();
         }
 
         if ($this->request->ajax()) {
             return response([
                 'authentication' => 'verify',
-                'box' => render_to_string(
+                'box' => view(
                     'users._verify_box',
                     compact('email')
-                ),
+                )->render(),
             ], 401);
         } else {
-            return response()->view('users.verify');
+            return ext_view('users.verify', compact('email'), null, 401);
         }
-    }
-
-    public function issue()
-    {
-        // 1 byte = 2^8 bits = 16^2 bits = 2 hex characters
-        $key = bin2hex(random_bytes(config('osu.user.verification_key_length_hex') / 2));
-        $user = $this->user;
-        $email = $user->user_email;
-        $to = $user->user_email;
-
-        $this->request->session()->put('verification_key', $key);
-        $this->request->session()->put('verification_expire_date', Carbon::now()->addHours(5));
-        $this->request->session()->put('verification_tries', 0);
-
-        $requestCountry = Country
-            ::where('acronym', $this->request->header('CF_IPCOUNTRY'))
-            ->pluck('name')
-            ->first();
-
-        Mail::to($to)
-            ->queue(new UserVerificationMail(
-                compact('key', 'user', 'requestCountry')
-            ));
     }
 
     public function isDone()
     {
-        if ($this->user === null) {
-            return true;
-        }
-
-        if ($this->request->session()->get('verified') === static::VERIFIED) {
-            return true;
-        }
-
-        return $this->isDoneLegacy();
+        return $this->state->isDone();
     }
 
-    public function isDoneLegacy()
+    public function issue()
     {
-        return $this->legacySession() !== null
-            && $this->legacySession()->verified;
-    }
+        $user = $this->user;
 
-    public function legacySession()
-    {
-        if ($this->_legacySession === false) {
-            $session = LegacySession::loadFromRequest($this->request);
-
-            if ($session !== null
-                && $session->session_user_id !== $this->user->user_id) {
-                $session = null;
-            }
-
-            $this->_legacySession = $session;
+        if (!present($user->user_email)) {
+            return;
         }
 
-        return $this->_legacySession;
+        $keys = $this->state->issue();
+
+        LoginAttempt::logAttempt($this->request->getClientIp(), $this->user, 'verify');
+
+        $requestCountry = Country
+            ::where('acronym', request_country($this->request))
+            ->pluck('name')
+            ->first();
+
+        Mail::to($user)
+            ->queue(new UserVerificationMail(
+                compact('keys', 'user', 'requestCountry')
+            ));
     }
 
-    public function verified()
+    public function markVerifiedAndRespond()
     {
-        $this->request->session()->forget('verification_expire_date');
-        $this->request->session()->forget('verification_tries');
-        $this->request->session()->forget('verification_key');
-        $this->request->session()->put('verified', static::VERIFIED);
-
-        if ($this->legacySession() !== null) {
-            $this->legacySession()->update(['verified' => true]);
-        }
+        $this->state->markVerified();
 
         return response([], 200);
     }
 
     public function reissue()
     {
-        if ($this->isDone()) {
-            return $this->verified();
+        if ($this->state->isDone()) {
+            return $this->markVerifiedAndRespond();
         }
 
         $this->issue();
@@ -146,39 +142,26 @@ class UserVerification
 
     public function verify()
     {
-        if ($this->isDone()) {
-            return $this->verified();
+        $key = str_replace(' ', '', $this->request->input('verification_key'));
+
+        try {
+            $this->state->verify($key);
+        } catch (UserVerificationException $e) {
+            static::logAttempt('input', 'fail', $e->reasonKey());
+
+            if ($e->reasonKey() === 'incorrect_key') {
+                LoginAttempt::logAttempt($this->request->getClientIp(), $this->user, 'verify-mismatch', $key);
+            }
+
+            if ($e->shouldReissue()) {
+                $this->issue();
+            }
+
+            return error_popup($e->getMessage());
         }
 
-        $expireDate = $this->request->session()->get('verification_expire_date');
-        $tries = $this->request->session()->get('verification_tries');
-        $key = $this->request->session()->get('verification_key');
-        $inputKey = str_replace(' ', '', $this->request->input('verification_key'));
+        static::logAttempt('input', 'success');
 
-        if (!present($expireDate) || !present($tries) || !present($key)) {
-            $this->issue();
-
-            return error_popup(trans('user_verification.errors.expired'));
-        }
-
-        if ($expireDate->isPast()) {
-            $this->issue();
-
-            return error_popup(trans('user_verification.errors.expired'));
-        }
-
-        if ($tries > config('osu.user.verification_key_tries_limit')) {
-            $this->issue();
-
-            return error_popup(trans('user_verification.errors.retries_exceeded'));
-        }
-
-        if (!hash_equals($key, $inputKey)) {
-            $this->request->session()->put('verification_tries', $tries + 1);
-
-            return error_popup(trans('user_verification.errors.incorrect_key'));
-        }
-
-        return $this->verified();
+        return $this->markVerifiedAndRespond();
     }
 }

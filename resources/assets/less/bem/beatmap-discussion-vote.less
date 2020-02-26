@@ -1,5 +1,5 @@
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -17,43 +17,51 @@
  */
 
 .beatmap-discussion-vote {
+  @top: beatmap-discussion-vote;
+  @_default-color: @osu-colour-f1;
   .reset-input();
-  .default-box-shadow();
-  .default-border-radius();
   .fade-element(100ms);
 
-  min-width: 35px;
-  padding: 10px;
-  padding-top: 5px;
-
   display: flex;
-  flex-direction: column;
-  align-items: center;
   margin-right: 10px;
-
   font-size: 12px;
-
-  &:hover {
-    .thick-box-shadow();
-  }
 
   &--up {
     &, &:hover {
-      color: @green;
+      color: @osu-colour-lime-3;
     }
   }
 
   &--down {
     &, &:hover {
-      color: @yellow-dark;
+      color: @osu-colour-orange-2;
     }
   }
 
   &--inactive {
-    color: #999;
+    color: @_default-color;
+  }
+
+  // overrides the other stuff
+  &[disabled] {
+    color: @osu-colour-b1;
+    background-color: @osu-colour-b3;
+    cursor: default;
+
+    &:hover {
+      color: @osu-colour-b1;
+    }
   }
 
   &__count {
-    color: #999;
+    padding-left: 5px;
+    color: white;
+    .@{top}--inactive & {
+      color: @_default-color;
+    }
+
+    .@{top}[disabled] & {
+      color: @osu-colour-b1;
+    }
   }
 }

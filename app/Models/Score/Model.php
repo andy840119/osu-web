@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -20,12 +20,16 @@
 
 namespace App\Models\Score;
 
+use App\Exceptions\ClassNotFoundException;
 use App\Models\Beatmap;
-use App\Models\Beatmapset;
 use App\Models\Model as BaseModel;
 use App\Models\User;
 use App\Traits\Scoreable;
 
+/**
+ * @property Beatmap $beatmap
+ * @property User $user
+ */
 abstract class Model extends BaseModel
 {
     use Scoreable;
@@ -37,6 +41,9 @@ abstract class Model extends BaseModel
         'replay' => 'boolean',
     ];
     protected $dates = ['date'];
+
+    protected $guarded = [];
+
     public $timestamps = false;
 
     public function scopeForUser($query, User $user)
@@ -54,9 +61,11 @@ abstract class Model extends BaseModel
         return $this->belongsTo(Beatmap::class, 'beatmap_id');
     }
 
-    public function beatmapset()
+    public function best()
     {
-        return $this->belongsTo(Beatmapset::class, 'beatmapset_id');
+        $basename = get_class_basename(static::class);
+
+        return $this->belongsTo("App\\Models\\Score\\Best\\{$basename}", 'high_score_id', 'score_id');
     }
 
     public static function getClass($modeInt)
@@ -64,16 +73,29 @@ abstract class Model extends BaseModel
         $modeStr = Beatmap::modeStr($modeInt);
 
         if ($modeStr !== null) {
-            $klass = get_class_namespace(static::class).'\\'.studly_case($modeStr);
-
-            return new $klass;
+            return static::getClassByString($modeStr);
         }
+    }
+
+    public static function getClassByString(string $mode)
+    {
+        if (!Beatmap::isModeValid($mode)) {
+            throw new ClassNotFoundException();
+        }
+
+        return get_class_namespace(static::class).'\\'.studly_case($mode);
+    }
+
+    public static function getMode(): string
+    {
+        return snake_case(get_class_basename(static::class));
     }
 
     public function scopeDefault($query)
     {
         return $query
             ->where('rank', '<>', 'F')
+            ->whereHas('beatmap')
             ->whereHas('user', function ($userQuery) {
                 $userQuery->default();
             })

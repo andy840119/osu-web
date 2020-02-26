@@ -1,5 +1,5 @@
 ###
-#    Copyright 2015-2017 ppy Pty. Ltd.
+#    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 #
 #    This file is part of osu!web. osu!web is distributed with the hope of
 #    attracting more community contributions to the core ecosystem of osu!.
@@ -16,11 +16,20 @@
 #    along with osu!web.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
-{form, input} = React.DOM
+import { CoverSelection } from './cover-selection'
+import * as React from 'react'
+import { a, div, label, p, strong } from 'react-dom-factories'
+import { StringWithComponent } from 'string-with-component'
 el = React.createElement
 
 
-class ProfilePage.CoverUploader extends React.Component
+export class CoverUploader extends React.Component
+  constructor: (props) ->
+    super props
+
+    @uploadButtonContainer = React.createRef()
+
+
   componentDidMount: =>
     $dropzone = $('.js-profile-cover-upload--dropzone')
 
@@ -30,7 +39,7 @@ class ProfilePage.CoverUploader extends React.Component
       name: 'cover_file'
       disabled: !@props.canUpload
 
-    @refs.uploadButtonContainer.appendChild($uploadButton[0])
+    @uploadButtonContainer.current.appendChild($uploadButton[0])
 
     $uploadButton.fileupload
       url: laroute.route('account.cover')
@@ -44,8 +53,7 @@ class ProfilePage.CoverUploader extends React.Component
       done: (_e, data) ->
         $.publish 'user:update', data.result
 
-      fail: (event, data) =>
-        osu.fileuploadFailCallback(@$uploadButton()) event, data
+      fail: osu.fileuploadFailCallback(@$uploadButton)
 
       complete: ->
         $.publish 'user:cover:upload:state', false
@@ -60,28 +68,37 @@ class ProfilePage.CoverUploader extends React.Component
     labelClass = 'btn-osu btn-osu--small btn-osu-default fileupload profile-cover-uploader__button'
     labelClass += ' disabled' unless @props.canUpload
 
-    el 'div', className: 'profile-cover-uploader',
-      el ProfilePage.CoverSelection,
-        url: @props.cover.customUrl
-        thumbUrl: @props.cover.customUrl
+    div className: 'profile-cover-uploader',
+      el CoverSelection,
+        url: @props.cover.custom_url
+        thumbUrl: @props.cover.custom_url
         isSelected: !@props.cover.id?
         name: -1
+        modifiers: ['custom']
 
-      el 'label', className: labelClass, ref: 'uploadButtonContainer',
+      label
+        className: labelClass
+        ref: @uploadButtonContainer
         osu.trans 'users.show.edit.cover.upload.button'
 
-      el 'div', className: 'profile-cover-uploader__info',
-        el 'p', className: 'profile-cover-uploader__info-entry',
-          el 'strong',
-            dangerouslySetInnerHTML:
-              __html: osu.trans 'users.show.edit.cover.upload.restriction_info'
+      div className: 'profile-cover-uploader__info',
+        p className: 'profile-cover-uploader__info-entry',
+          strong null,
+            el StringWithComponent,
+              mappings:
+                ':link': a
+                  href: laroute.route('store.products.show', product: 'supporter-tag')
+                  key: 'link'
+                  target: '_blank'
+                  osu.trans 'users.show.edit.cover.upload.restriction_info.link'
+              pattern: osu.trans 'users.show.edit.cover.upload.restriction_info._'
 
-        el 'p', className: 'profile-cover-uploader__info-entry',
+        p className: 'profile-cover-uploader__info-entry',
           osu.trans 'users.show.edit.cover.upload.dropzone_info'
 
-        el 'p', className: 'profile-cover-uploader__info-entry',
+        p className: 'profile-cover-uploader__info-entry',
           osu.trans 'users.show.edit.cover.upload.size_info'
 
 
   $uploadButton: =>
-    $(@refs.uploadButtonContainer).find('.js-profile-cover-upload')
+    $(@uploadButtonContainer.current).find('.js-profile-cover-upload')

@@ -63,6 +63,18 @@ class ForumSeeder extends Seeder
                 $f2->refreshCache();
             }
 
+            // Create userpage threads
+            $f = factory(App\Models\Forum\Forum::class, 'parent')->create([
+                'forum_name' => 'User Pages',
+                'forum_desc' => 'Your user profile pages go here!',
+            ]);
+
+            $f->subforums()->save(factory(App\Models\Forum\Forum::class, 'child')->make([
+                'forum_id' => config('osu.user.user_page_forum_id'),
+                'parent_id' => $f->forum_id,
+                'forum_name' => 'User Pages',
+            ]));
+
             // Create 3 forums
             factory(App\Models\Forum\Forum::class, 'parent', 3)->create()->each(function ($f) {
                 for ($i = 0; $i < 4; $i++) {
@@ -87,7 +99,7 @@ class ForumSeeder extends Seeder
                 foreach ($authOptionIds as $optionId) {
                     $group = new App\Models\Forum\Authorize;
 
-                    $group->group_id = App\Models\UserGroup::GROUPS['default'];
+                    $group->group_id = app('groups')->byIdentifier('default')->getKey();
                     $group->forum_id = $forum->forum_id;
                     $group->auth_option_id = $optionId;
                     $group->auth_setting = 1;

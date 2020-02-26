@@ -1,18 +1,16 @@
 <?php
 
-use App\Libraries\UserVerification;
+namespace Tests\Controllers;
+
 use App\Models\User;
 use App\Models\UserProfileCustomization;
 use App\Models\WeakPassword;
+use Hash;
+use Tests\TestCase;
 
 class AccountControllerTest extends TestCase
 {
-    public function setUp()
-    {
-        parent::setUp();
-
-        $this->user = factory(User::class)->create();
-    }
+    private $user;
 
     /**
      * Checks whether an OK status is returned when the
@@ -23,12 +21,11 @@ class AccountControllerTest extends TestCase
         $newOrder = UserProfileCustomization::SECTIONS;
         seeded_shuffle($newOrder);
 
-        $this->actingAs($this->user)
-            ->withSession(['verified' => UserVerification::VERIFIED])
-            ->json('PUT', route('account.update'), [
+        $this->actingAsVerified($this->user())
+            ->json('PUT', route('account.options'), [
                 'order' => $newOrder,
             ])
-            ->assertJsonFragment(['profileOrder' => $newOrder]);
+            ->assertJsonFragment(['profile_order' => $newOrder]);
     }
 
     public function testDuplicatesInProfileOrder()
@@ -38,12 +35,11 @@ class AccountControllerTest extends TestCase
         $newOrderWithDuplicate = $newOrder;
         $newOrderWithDuplicate[] = $newOrder[0];
 
-        $this->actingAs($this->user)
-            ->withSession(['verified' => UserVerification::VERIFIED])
-            ->json('PUT', route('account.update'), [
+        $this->actingAsVerified($this->user())
+            ->json('PUT', route('account.options'), [
                 'order' => $newOrderWithDuplicate,
             ])
-            ->assertJsonFragment(['profileOrder' => $newOrder]);
+            ->assertJsonFragment(['profile_order' => $newOrder]);
     }
 
     public function testInvalidIdsInProfileOrder()
@@ -53,28 +49,26 @@ class AccountControllerTest extends TestCase
         $newOrderWithInvalid = $newOrder;
         $newOrderWithInvalid[] = 'test';
 
-        $this->actingAs($this->user)
-            ->withSession(['verified' => UserVerification::VERIFIED])
-            ->json('PUT', route('account.update'), [
+        $this->actingAsVerified($this->user())
+            ->json('PUT', route('account.options'), [
                 'order' => $newOrderWithInvalid,
             ])
-            ->assertJsonFragment(['profileOrder' => $newOrder]);
+            ->assertJsonFragment(['profile_order' => $newOrder]);
     }
 
     public function testUpdateEmail()
     {
         $newEmail = 'new-'.$this->user->user_email;
 
-        $this->actingAs($this->user)
-            ->withSession(['verified' => UserVerification::VERIFIED])
+        $this->actingAsVerified($this->user())
             ->json('PUT', route('account.email'), [
-                'user_email' => [
+                'user' => [
                     'current_password' => 'password',
-                    'email' => $newEmail,
-                    'email_confirmation' => $newEmail,
+                    'user_email' => $newEmail,
+                    'user_email_confirmation' => $newEmail,
                 ],
             ])
-            ->assertStatus(200);
+            ->assertSuccessful();
 
         $this->assertSame($newEmail, $this->user->fresh()->user_email);
 
@@ -85,13 +79,12 @@ class AccountControllerTest extends TestCase
     {
         $newEmail = 'new-'.$this->user->user_email;
 
-        $this->actingAs($this->user)
-            ->withSession(['verified' => UserVerification::VERIFIED])
+        $this->actingAsVerified($this->user())
             ->json('PUT', route('account.email'), [
-                'user_email' => [
+                'user' => [
                     'current_password' => 'password1',
-                    'email' => $newEmail,
-                    'email_confirmation' => $newEmail,
+                    'user_email' => $newEmail,
+                    'user_email_confirmation' => $newEmail,
                 ],
             ])
             ->assertStatus(422);
@@ -101,26 +94,24 @@ class AccountControllerTest extends TestCase
     {
         $newPassword = 'newpassword';
 
-        $this->actingAs($this->user)
-            ->withSession(['verified' => UserVerification::VERIFIED])
+        $this->actingAsVerified($this->user())
             ->json('PUT', route('account.password'), [
-                'user_password' => [
+                'user' => [
                     'current_password' => 'password',
                     'password' => $newPassword,
                     'password_confirmation' => $newPassword,
                 ],
             ])
-            ->assertStatus(200);
+            ->assertSuccessful();
 
         $this->assertTrue(Hash::check($newPassword, $this->user->fresh()->user_password));
     }
 
     public function testUpdatePasswordInvalidCurrentPassword()
     {
-        $this->actingAs($this->user)
-            ->withSession(['verified' => UserVerification::VERIFIED])
+        $this->actingAsVerified($this->user())
             ->json('PUT', route('account.password'), [
-                'user_password' => [
+                'user' => [
                     'current_password' => 'notpassword',
                     'password' => 'newpassword',
                     'password_confirmation' => 'newpassword',
@@ -131,10 +122,9 @@ class AccountControllerTest extends TestCase
 
     public function testUpdatePasswordInvalidPasswordConfirmation()
     {
-        $this->actingAs($this->user)
-            ->withSession(['verified' => UserVerification::VERIFIED])
+        $this->actingAsVerified($this->user())
             ->json('PUT', route('account.password'), [
-                'user_password' => [
+                'user' => [
                     'current_password' => 'password',
                     'password' => 'newpassword',
                     'password_confirmation' => 'oldpassword',
@@ -145,10 +135,9 @@ class AccountControllerTest extends TestCase
 
     public function testUpdatePasswordUsernameAsPassword()
     {
-        $this->actingAs($this->user)
-            ->withSession(['verified' => UserVerification::VERIFIED])
+        $this->actingAsVerified($this->user())
             ->json('PUT', route('account.password'), [
-                'user_password' => [
+                'user' => [
                     'current_password' => 'password',
                     'password' => $this->user->username,
                     'password_confirmation' => $this->user->username,
@@ -159,10 +148,9 @@ class AccountControllerTest extends TestCase
 
     public function testUpdatePasswordShortPassword()
     {
-        $this->actingAs($this->user)
-            ->withSession(['verified' => UserVerification::VERIFIED])
+        $this->actingAsVerified($this->user())
             ->json('PUT', route('account.password'), [
-                'user_password' => [
+                'user' => [
                     'current_password' => 'password',
                     'password' => '1234567',
                     'password_confirmation' => '1234567',
@@ -177,15 +165,27 @@ class AccountControllerTest extends TestCase
 
         WeakPassword::add($weakPassword);
 
-        $this->actingAs($this->user)
-            ->withSession(['verified' => UserVerification::VERIFIED])
+        $this->actingAsVerified($this->user())
             ->json('PUT', route('account.password'), [
-                'user_password' => [
+                'user' => [
                     'current_password' => 'password',
                     'password' => $weakPassword,
                     'password_confirmation' => $weakPassword,
                 ],
             ])
             ->assertStatus(422);
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->user = factory(User::class)->create();
+    }
+
+    private function user()
+    {
+        // To reset all the verify toggles.
+        return $this->user->fresh();
     }
 }

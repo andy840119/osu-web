@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -20,28 +20,23 @@
 
 namespace App\Models;
 
-use DB;
-
+/**
+ * @property mixed $hash
+ */
 class WeakPassword extends Model
 {
     public $incrementing = false;
     public $timestamps = false;
     protected $primaryKey = 'hash';
-    protected $guarded = [];
+    protected $keyType = 'string';
 
     public static function add($string)
     {
-        $md5 = md5(strtolower($string));
-
-        static::create([
-            'hash' => DB::raw("UNHEX('{$md5}')"),
-        ]);
+        static::create(['hash' => md5(strtolower($string), true)]);
     }
 
     public static function check($string)
     {
-        return static
-            ::whereRaw('hash = UNHEX(?)', md5(strtolower($string)))
-            ->exists();
+        return static::where(['hash' => md5(strtolower($string), true)])->exists();
     }
 }

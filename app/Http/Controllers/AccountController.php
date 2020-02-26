@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -21,14 +21,14 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\ImageProcessorException;
+use App\Exceptions\ModelNotSavedException;
 use App\Libraries\UserVerification;
+use App\Libraries\UserVerificationState;
 use App\Mail\UserEmailUpdated;
 use App\Mail\UserPasswordUpdated;
-use App\Models\User;
-use App\Models\UserEmail;
-use App\Models\UserPassword;
+use App\Models\OAuth\Client;
+use App\Models\UserAccountHistory;
 use Auth;
-use Illuminate\Http\Request as HttpRequest;
 use Mail;
 use Request;
 
@@ -39,7 +39,9 @@ class AccountController extends Controller
 
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware('auth', ['except' => [
+            'verifyLink',
+        ]]);
 
         $this->middleware(function ($request, $next) {
             if (Auth::check() && Auth::user()->isSilenced()) {
@@ -47,15 +49,29 @@ class AccountController extends Controller
             }
 
             return $next($request);
-        });
-
-        $this->middleware('verify-user');
-        $this->middleware('throttle:60,10', [
-            'only' => [
+        }, [
+            'except' => [
+                'edit',
+                'reissueCode',
                 'updateEmail',
+                'updatePage',
                 'updatePassword',
+                'verify',
+                'verifyLink',
             ],
         ]);
+
+        $this->middleware('verify-user', ['except' => [
+            'updateOptions',
+        ]]);
+
+        $this->middleware('throttle:60,10', ['only' => [
+            'reissueCode',
+            'updateEmail',
+            'updatePassword',
+            'verify',
+            'verifyLink',
+        ]]);
 
         return parent::__construct();
     }
@@ -90,112 +106,169 @@ class AccountController extends Controller
 
     public function edit()
     {
-        return view('accounts.edit');
+        $user = auth()->user();
+
+        $blocks = $user->blocks()
+            ->orderBy('username')
+            ->get();
+
+        $sessions = Request::session()
+            ->currentUserSessions();
+
+        $currentSessionId = Request::session()
+            ->getIdWithoutKeyPrefix();
+
+        $authorizedClients = json_collection(Client::forUser($user), 'OAuth\Client', 'user');
+        $ownClients = json_collection($user->oauthClients()->where('revoked', false)->get(), 'OAuth\Client', ['redirect', 'secret']);
+
+        $notificationOptions = $user->notificationOptions->keyBy('name');
+
+        return ext_view('accounts.edit', compact(
+            'authorizedClients',
+            'blocks',
+            'currentSessionId',
+            'notificationOptions',
+            'ownClients',
+            'sessions'
+        ));
     }
 
     public function update()
     {
-        $customizationParams = get_params(
-            Request::all(),
-            'user_profile_customization',
-            [
-                'extras_order:string[]',
-            ]
-        );
+        $user = Auth::user();
 
-        $userParams = get_params(
-            Request::all(),
-            'user',
-            [
-                'user_from:string',
-                'user_interests:string',
-                'user_msnm:string',
-                'user_occ:string',
-                'user_twitter:string',
-                'user_website:string',
-                'user_sig:string',
-                'osu_playstyle:string[]',
-            ]
-        );
+        $params = get_params(request(), 'user', [
+            'hide_presence:bool',
+            'osu_playstyle:string[]',
+            'playmode:string',
+            'pm_friends_only:bool',
+            'user_from:string',
+            'user_interests:string',
+            'user_msnm:string',
+            'user_notify:bool',
+            'user_occ:string',
+            'user_sig:string',
+            'user_twitter:string',
+            'user_website:string',
+            'user_discord:string',
+        ]);
 
-        if (count($customizationParams) > 0) {
-            Auth::user()
-                ->profileCustomization()
-                ->update($customizationParams);
+        try {
+            $user->fill($params)->saveOrExplode();
+        } catch (ModelNotSavedException $e) {
+            return $this->errorResponse($user, $e);
         }
 
-        if (count($userParams) > 0) {
-            Auth::user()->update($userParams);
-        }
-
-        return Auth::user()->defaultJson();
+        return $user->defaultJson();
     }
 
     public function updateEmail()
     {
-        $user = Auth::user();
+        $params = get_params(request(), 'user', ['current_password', 'user_email', 'user_email_confirmation']);
+        $user = Auth::user()->validateCurrentPassword()->validateEmailConfirmation();
         $previousEmail = $user->user_email;
-        $userEmail = (new UserEmail($user))
-            ->fill(Request::input('user_email'));
 
-        if ($userEmail->save() === true) {
+        if ($user->update($params) === true) {
             $addresses = [$user->user_email];
             if (present($previousEmail)) {
                 $addresses[] = $previousEmail;
             }
             foreach ($addresses as $address) {
-                Mail::to($address)->send(new UserEmailUpdated($user));
+                Mail::to($address)->locale($user->preferredLocale())->send(new UserEmailUpdated($user));
             }
 
-            return ['message' => trans('accounts.update_email.updated')];
+            UserAccountHistory::logUserUpdateEmail($user, $previousEmail);
+
+            return response([], 204);
         } else {
-            return response(['form_error' => [
-                'user_email' => $userEmail->validationErrors()->all(),
-            ]], 422);
+            return $this->errorResponse($user);
         }
     }
 
-    public function updatePage()
+    public function updateNotificationOptions()
+    {
+        $request = request();
+
+        $name = $request['name'] ?? null;
+        $params = get_params($request, 'user_notification_option', ['details:any']);
+
+        $option = auth()->user()->notificationOptions()->firstOrCreate(['name' => $name]);
+
+        if ($option->update($params)) {
+            return response(null, 204);
+        } else {
+            return response(['form_error' => [
+                'user_notification_option' => $option->validationErrors()->all(),
+            ]]);
+        }
+    }
+
+    public function updateOptions()
     {
         $user = Auth::user();
 
-        priv_check('UserPageEdit', $user)->ensureCan();
+        $params = get_params(request(), 'user_profile_customization', [
+            'comments_sort:string',
+            'extras_order:string[]',
+            'ranking_expanded:bool',
+        ]);
 
-        $user = $user->updatePage(Request::input('body'));
+        try {
+            $user->profileCustomization()->fill($params)->saveOrExplode();
+        } catch (ModelNotSavedException $e) {
+            return $this->errorResponse($user, $e);
+        }
 
-        return ['html' => $user->userPage->bodyHTML];
+        return $user->defaultJson();
     }
 
     public function updatePassword()
     {
-        $user = Auth::user();
-        $userPassword = (new UserPassword($user))
-            ->fill(Request::input('user_password'));
+        $params = get_params(request(), 'user', ['current_password', 'password', 'password_confirmation']);
+        $user = Auth::user()->validateCurrentPassword()->validatePasswordConfirmation();
 
-        if ($userPassword->save() === true) {
+        if ($user->update($params) === true) {
             if (present($user->user_email)) {
-                Mail::to($user->user_email)->send(new UserPasswordUpdated($user));
+                Mail::to($user)->send(new UserPasswordUpdated($user));
             }
 
-            return ['message' => trans('accounts.update_password.updated')];
+            return response([], 204);
         } else {
-            return response(['form_error' => [
-                'user_password' => $userPassword->validationErrors()->all(),
-            ]], 422);
+            return $this->errorResponse($user);
         }
     }
 
-    public function verify(HttpRequest $request)
+    public function verify()
     {
-        $verification = new UserVerification(Auth::user(), $request);
-
-        return $verification->verify();
+        return UserVerification::fromCurrentRequest()->verify();
     }
 
-    public function reissueCode(HttpRequest $request)
+    public function verifyLink()
     {
-        $verification = new UserVerification(Auth::user(), $request);
+        $state = UserVerificationState::fromVerifyLink(request('key'));
 
-        return $verification->reissue();
+        if ($state === null) {
+            UserVerification::logAttempt('link', 'fail', 'incorrect_key');
+
+            return ext_view('accounts.verification_invalid', null, null, 404);
+        }
+
+        UserVerification::logAttempt('link', 'success');
+        $state->markVerified();
+
+        return ext_view('accounts.verification_completed');
+    }
+
+    public function reissueCode()
+    {
+        return UserVerification::fromCurrentRequest()->reissue();
+    }
+
+    private function errorResponse($user, $exception = null)
+    {
+        return response([
+            'form_error' => ['user' => $user->validationErrors()->all()],
+            'error' => optional($exception)->getMessage(),
+        ], 422);
     }
 }

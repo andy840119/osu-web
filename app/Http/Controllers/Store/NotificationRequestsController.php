@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -29,7 +29,9 @@ class NotificationRequestsController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('check-user-restricted');
+        if (!$this->isAllowRestrictedUsers()) {
+            $this->middleware('check-user-restricted');
+        }
 
         return parent::__construct();
     }
@@ -52,7 +54,7 @@ class NotificationRequestsController extends Controller
             }
         }
 
-        return js_view('layout.ujs-reload');
+        return ext_view('layout.ujs-reload', [], 'js');
     }
 
     public function destroy($productId)
@@ -62,6 +64,6 @@ class NotificationRequestsController extends Controller
             ->where('user_id', '=', Auth::user()->user_id)
             ->delete();
 
-        return js_view('layout.ujs-reload');
+        return ext_view('layout.ujs-reload', [], 'js');
     }
 }

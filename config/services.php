@@ -14,6 +14,10 @@ return [
     |
     */
 
+    'enchant' => [
+        'id' => presence(env('ENCHANT_ID')),
+    ],
+
     'mailgun' => [
         'domain' => env('MAILGUN_DOMAIN'),
         'secret' => env('MAILGUN_SECRET'),
@@ -39,13 +43,11 @@ return [
         'tracking_id' => env('GA_TRACKING_ID', ''),
     ],
 
-    'disqus' => [
-        'short_name' => env('DISQUS_SHORT_NAME'),
-        'secret_key' => env('DISQUS_SECRET_KEY'),
-        'public_key' => env('DISQUS_PUBLIC_KEY'),
-    ],
-
     'passport' => [
         'path' => env('PASSPORT_KEY_PATH'),
+    ],
+
+    'sentry' => [
+        'public_dsn' => env('APP_SENTRY_PUBLIC', ''),
     ],
 ];

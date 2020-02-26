@@ -1,5 +1,5 @@
 ###
-#    Copyright 2015-2017 ppy Pty. Ltd.
+#    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 #
 #    This file is part of osu!web. osu!web is distributed with the hope of
 #    attracting more community contributions to the core ecosystem of osu!.
@@ -16,59 +16,59 @@
 #    along with osu!web.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
-{a, div, li, span, ul} = React.DOM
+import * as React from 'react'
+import { a, div, li, span, ul } from 'react-dom-factories'
 el = React.createElement
 
-BeatmapDiscussions.ModeSwitcher = React.createClass
-  mixins: [StickyTabsMixin]
+export class ModeSwitcher extends React.PureComponent
+  constructor: (props) ->
+    super props
 
 
-  componentDidMount: ->
-    $.subscribe 'stickyHeader.beatmapDiscussionsMode', @_tabsStick
-    osu.pageChange()
+  render: =>
+    modes = ['generalAll', 'general', 'timeline', 'events']
+    modes.unshift('reviews') if @props.reviewsEnabled
 
-
-  componentWillUnmount: ->
-    $.unsubscribe '.beatmapDiscussionsMode'
-
-
-  getInitialState: ->
-    tabsSticky: false
-
-
-  render: ->
-    div null,
+    [
       div
-        className: "page-extra-tabs #{'page-extra-tabs--floating' if @state.tabsSticky}"
+        className: 'page-extra-tabs-before'
+        key: 'page-extra-tabs-before'
 
-        div
-          className: 'js-sticky-header'
-          'data-sticky-header-target': 'page-extra-tabs'
+      div
+        className: 'page-extra-tabs'
+        key: 'page-extra-tabs'
+        ref: @props.innerRef
 
-        div
-          className: 'page-extra-tabs__padding js-sync-height--target'
-          'data-sync-height-id': 'page-extra-tabs'
-          'data-sticky-header-target': 'page-extra-tabs'
+        div className: 'osu-page',
+          ul className: 'page-mode page-mode--page-extra-tabs',
+            for mode in modes
+              li
+                key: mode
+                className: 'page-mode__item'
+                a
+                  className: "page-mode-link #{if @props.mode == mode then 'page-mode-link--is-active' else ''}"
+                  onClick: @switch
+                  href: BeatmapDiscussionHelper.url
+                    mode: mode
+                    beatmapId: @props.currentBeatmap.id
+                    beatmapsetId: @props.beatmapset.id
+                  'data-mode': mode
+                  div
+                    dangerouslySetInnerHTML:
+                      __html:
+                        if _.startsWith(mode, 'general')
+                          osu.trans "beatmaps.discussions.mode.general",
+                            scope: "<span class='page-mode-link__subtitle'>(#{osu.trans("beatmaps.discussions.mode.scopes.#{mode}")})</span>"
+                        else
+                          osu.trans("beatmaps.discussions.mode.#{_.snakeCase mode}")
+                  if mode != 'events'
+                    span className: 'page-mode-link__badge',
+                      _.size(@props.currentDiscussions.byFilter[@props.currentFilter][mode])
+                  span className: 'page-mode-link__stripe'
+    ]
 
-        div
-          className: 'page-extra-tabs__floatable js-sync-height--reference js-mode-switcher'
-          'data-sync-height-target': 'page-extra-tabs'
-          div className: 'osu-page',
-            ul className: 'page-mode page-mode--page-extra-tabs',
-              for mode in ['generalAll', 'general', 'timeline']
-                li
-                  key: mode
-                  className: 'page-mode__item'
-                  a
-                    className: "page-mode-link #{'page-mode-link--is-active' if @props.mode == mode}"
-                    onClick: @switch
-                    href: '#'
-                    'data-mode': mode
-                    osu.trans("beatmaps.discussions.mode.#{_.snakeCase mode}")
-                    span className: 'page-mode-link__stripe'
 
-
-  switch: (e) ->
+  switch: (e) =>
     e.preventDefault()
 
-    $.publish 'beatmapDiscussion:setMode', e.currentTarget.dataset.mode
+    $.publish 'beatmapsetDiscussions:update', mode: e.currentTarget.dataset.mode

@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -19,8 +19,19 @@
  */
 
 return [
-    'errors' => [
-        'csrf' => 'Brak dostępu',
-        'missing' => 'Nie znaleziono',
+    'error' => [
+        'chat' => [
+            'empty' => 'Nie możesz wysłać pustej wiadomości.',
+            'limit_exceeded' => 'Wysyłasz wiadomości zbyt szybko, poczekaj chwilę zanim zaczniesz wysyłać kolejne.',
+            'too_long' => 'Wiadomość, którą chcesz wysłać, jest zbyt długa.',
+        ],
+    ],
+
+    'scopes' => [
+        'identify' => 'zidentyfikować cię i uzyskać publiczne informacje z twojego profilu.',
+
+        'friends' => [
+            'read' => 'zobaczyć, kogo obserwujesz.',
+        ],
     ],
 ];

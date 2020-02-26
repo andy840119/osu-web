@@ -15,38 +15,49 @@
     },
     {
       "type": "vcs",
-      "url": "https://github.com/nanaya/commonmark-table-extension"
+      "url": "https://github.com/nanaya/xsolla-sdk-php"
     }
   ],
   "require": {
+    "chaseconey/laravel-datadog-helper": ">=1.2.0",
     "doctrine/dbal": "*",
-    "ezyang/htmlpurifier": "^4.7",
-    "graham-campbell/github": "^5.0",
-    "graham-campbell/markdown": "*",
-    "guzzlehttp/guzzle": "^6.2",
-    "itsgoingd/clockwork": "~1.9",
-    "laravel/framework": "5.4.*",
-    "laravel/passport": "^2.0",
-    "laravel/tinker": "~1.0",
-    "laravelcollective/html": "5.4.*",
-    "league/flysystem-aws-s3-v3": "^1.0",
-    "league/fractal": "^0.14.0",
-    "lord/laroute": "~2.0",
-    "maknz/slack": "dev-laravel-5.4",
+    "egulias/email-validator": "*",
+    "elasticsearch/elasticsearch": ">=6.0, <6.6",
+    "ezyang/htmlpurifier": "*",
+    "graham-campbell/github": "*",
+    "guzzlehttp/guzzle": "*",
+    "itsgoingd/clockwork": ">=3.0",
+    "jenssegers/agent": "*",
+    "laravel/framework": "6.8.0",
+    "laravel/helpers": "^1.1",
+    "laravel/passport": "*",
+    "laravel/slack-notification-channel": "^2.0",
+    "laravel/tinker": "*",
+    "laravelcollective/html": "*",
+    "league/commonmark": ">=0.16.0",
+    "league/commonmark-ext-autolink": "^1.0",
+    "league/commonmark-ext-table": "*",
+    "league/flysystem-aws-s3-v3": "*",
+    "league/fractal": "*",
+    "league/html-to-markdown": "*",
+    "maknz/slack": "dev-laravel-any",
     "mariuzzo/laravel-js-localization": "*",
-    "predis/predis": "~1.0",
-    "sentry/sentry-laravel": "^0.6.0",
-    "shift31/laravel-elasticsearch": "~1.0",
-    "webuni/commonmark-table-extension": "dev-fix-escapes",
-    "chaseconey/laravel-datadog-helper": "^0.6.0",
-    "tumblr/tumblr": "^0.2.0"
+    "mpociot/laravel-apidoc-generator": "*",
+    "paypal/rest-api-sdk-php": "*",
+    "sentry/sentry-laravel": "*",
+    "symfony/yaml": "*",
+    "tightenco/ziggy": ">=0.8.1",
+    "xsolla/xsolla-sdk-php": ">=4.2.0"
   },
   "require-dev": {
-    "fzaninotto/faker": "~1.4",
-    "mockery/mockery": "0.9.*",
-    "phpunit/phpunit": "~5.7",
-    "symfony/css-selector": "3.1.*",
-    "symfony/dom-crawler": "3.1.*"
+    "beyondcode/laravel-query-detector": "*",
+    "filp/whoops": "*",
+    "fzaninotto/faker": "*",
+    "laravel/dusk": "*",
+    "mockery/mockery": "*",
+    "phpunit/phpunit": "*",
+    "symfony/css-selector": "*",
+    "symfony/dom-crawler": "*"
   },
   "autoload": {
     "classmap": [
@@ -60,27 +71,32 @@
     ]
   },
   "autoload-dev": {
-    "classmap": [
-      "tests/TestCase.php"
-    ]
+    "psr-4": {
+      "Tests\\": "tests/"
+    }
   },
   "scripts": {
-    "post-install-cmd": [
-      "php artisan clear-compiled",
-      "php artisan optimize"
-    ],
-    "post-update-cmd": [
-      "php artisan clear-compiled",
-      "php artisan optimize"
-    ],
     "post-root-package-install": [
-      "php -r \"copy('.env.example', '.env');\""
+      "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+    ],
+    "post-autoload-dump": [
+      "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+      "@php artisan package:discover"
     ],
     "post-create-project-cmd": [
-      "php artisan key:generate"
+      "@php artisan key:generate"
     ]
   },
   "config": {
-    "preferred-install": "dist"
+    "preferred-install": "dist",
+    "sort-packages": true,
+    "optimize-autoloader": true
+  },
+  "extra": {
+    "laravel": {
+      "dont-discover": [
+        "laravel/passport"
+      ]
+    }
   }
 }

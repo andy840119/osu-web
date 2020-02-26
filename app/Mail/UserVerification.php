@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -21,14 +21,15 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class UserVerification extends Mailable
+class UserVerification extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public $key;
+    public $keys;
     public $user;
     public $requestCountry;
 
@@ -39,7 +40,7 @@ class UserVerification extends Mailable
      */
     public function __construct($attributes)
     {
-        $this->key = $attributes['key'];
+        $this->keys = $attributes['keys'];
         $this->user = $attributes['user'];
         $this->requestCountry = $attributes['requestCountry'];
     }
@@ -52,7 +53,7 @@ class UserVerification extends Mailable
     public function build()
     {
         return $this
-            ->text(i18n_view('emails.user_verification'))
-            ->subject(trans('user_verification.email.subject'));
+            ->text('emails.user_verification')
+            ->subject(trans('mail.user_verification.subject'));
     }
 }

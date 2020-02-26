@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -19,8 +19,6 @@
  */
 
 return [
-    'title' => '重置密码',
-
     'button' => [
         'cancel' => '取消',
         'resend' => '重新发送确认邮件',
@@ -28,32 +26,33 @@ return [
         'start' => '开始',
     ],
 
-    'email' => [
-        'subject' => 'osu! 账户找回',
-    ],
-
     'error' => [
-        'contact_support' => '请联系客服以找回账户.',
-        'is_privileged' => '联系 peppy.', //原文的lulz几个意思?
-        'missing_key' => '必填.', //需要上下文
-        'too_many_tries' => '失败尝试次数过多.',
-        'user_not_found' => '请求的用户不存在.',
-        'wrong_key' => '不正确的验证码.',
+        'contact_support' => '请联系支持团队以找回账户',
+        'is_privileged' => '联系 peppy（笑）',
+        'missing_key' => '必填',
+        'too_many_tries' => '重试次数过多',
+        'user_not_found' => '请求的用户不存在',
+        'wrong_key' => '不正确的验证码',
     ],
 
     'notice' => [
-        'sent' => '检查您邮箱中的验证码.',
-        'saved' => '新密码已经保存!',
+        'sent' => '检查您邮箱中的验证码',
+        'saved' => '新密码已经保存！',
     ],
 
     'started' => [
         'password' => '新密码',
-        'password_confirmation' => '确认密码',
-        'title' => '为 <strong>:username</strong> 重置密码.',
+        'password_confirmation' => '确认新密码',
+        'title' => '为 <strong>:username</strong> 重置密码',
         'verification_key' => '验证码',
     ],
 
     'starting' => [
         'username' => '输入邮箱或用户名',
+
+        'support' => [
+            '_' => '需要进一步的帮助？通过我们的 :button 联系我们。',
+            'button' => '支持系统',
+        ],
     ],
 ];

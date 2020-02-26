@@ -1,5 +1,5 @@
 {{--
-    Copyright 2015-2017 ppy Pty. Ltd.
+    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 
     This file is part of osu!web. osu!web is distributed with the hope of
     attracting more community contributions to the core ecosystem of osu!.
@@ -16,8 +16,7 @@
     along with osu!web.  If not, see <http://www.gnu.org/licenses/>.
 --}}
 @extends('master', [
-    'titleAppend' => $topic->topic_title,
-    "body_additional_classes" => 't-forum-'.$topic->forum->categorySlug(),
+    'titlePrepend' => $topic->topic_title,
     'canonicalUrl' => route('forum.topics.show', $topic->topic_id),
     'search' => [
         'params' => [
@@ -26,169 +25,146 @@
         'url' => route('forum.forums.search'),
     ],
     'pageDescription' => $topic->toMetaDescription(),
+    'legacyFont' => false,
 ])
 
-@section("content")
-    <div class="js-forum__topic-first-post-id hidden" data-first-post-id={{ $firstPostId }}></div>
-    <div class="forum-topic-headernav js-forum-topic-headernav js-sync-height--reference" data-sync-height-target="forum-topic-headernav" data-visibility="hidden">
-        <div class="forum-topic-headernav__stripe
-            u-forum--bg-link
-        "></div>
+@php
+    $headerCover = $cover['fileUrl'] ?? $cover['defaultFileUrl'] ?? null;
+    $canEditTitle = priv_check('ForumTopicEdit', $topic)->can();
 
-        <div class="osu-page"><div class="forum-topic-headernav__content">
-            <div class="forum-topic-headernav__logo">
-                @include('objects.logo-menu', ['logoMenuHoverBgClass' => 'u-forum--bg-link'])
-            </div>
+    $toolbarItems = [];
 
-            <div class="forum-topic-headernav__titles">
-                <div class="forum-topic-headernav__title">
-                    @include('forum.topics._header_breadcrumb_small', [
-                        'forum' => $topic->forum,
-                    ])
-                </div>
+    if ($canEditTitle) {
+        $toolbarItems['edit_title'] = true;
+    }
 
-                <h1 class="forum-topic-headernav__title">
-                    <a href="{{ route("forum.topics.show", $topic->topic_id) }}" class="link--white">
-                        {{ $topic->topic_title }}
-                    </a>
-                </h1>
-            </div>
-        </div></div>
-    </div>
+    if (priv_check('ForumTopicCoverEdit', $topic)->can()) {
+        $toolbarItems['edit_cover'] = true;
+    }
+@endphp
+@section('content')
+    @include('forum.topics._floating_header')
+    @include('forum._header', [
+        'forum' => $topic->forum,
+        'background' => $headerCover,
+    ])
 
-    @include('forum.topics._header')
+    <div class="js-forum__topic-user-can-moderate hidden" data-user-can-moderate="{{ $userCanModerate }}"></div>
+    <div class="js-forum__topic-first-post-id hidden" data-first-post-id="{{ $firstPostId }}"></div>
 
-    <div class="js-header--alt js-sync-height--target" data-sync-height-id="forum-topic-headernav"></div>
+    <div class="js-sticky-header"></div>
 
-    @if ($topic->poll()->exists())
-        <div class="osu-layout__row js-header--main">
-            @include('forum.topics._poll')
-        </div>
-    @endif
+    <div class="osu-page osu-page--forum-topic">
+        <div class="forum-topic-header-padding js-header--alt js-sync-height--target" data-sync-height-id="sticky-header"></div>
 
-    @if (false && $topic->isFeatureTopic())
-        <div class="forum-topic-feature-vote">
-            <p>
-                @foreach ($topic->featureVotes as $vote)
-                    <span>+{{ $vote->voteIncrement() }} by {{ $vote->user->username }}</span>
-                @endforeach
-            </p>
-            <p>
-                {{ trans('forum.topics.show.feature_vote.current', [
-                    'count' => $topic->osu_starpriority,
-                ]) }}
-            </p>
+        <div class="js-header--main">
+            <div class="forum-topic-title">
+                <div class="forum-topic-title__item forum-topic-title__item--main">
+                    <div class="forum-topic-title__title-container js-forum-topic-title--toggleable" data-edit="0">
+                        <h1 class="forum-topic-title__title forum-topic-title__title--display">
+                            {{ $topic->topic_title }}
+                        </h1>
 
-            @if (Auth::check())
-                @if (Auth::user()->osu_featurevotes >= App\Models\Forum\FeatureVote::COST)
-                    <a href="{{ route('forum.topics.vote-feature', $topic->getKey()) }}" data-method="POST" data-remote=1>
-                        {{ trans('forum.topics.show.feature_vote.do') }}
-                    </a>
-                @else
-                    <p>
-                        {{ trans('forum.topics.show.feature_vote.user.not_enough') }}
-                    </p>
-                @endif
-
-                <p>
-                    {{ trans('forum.topics.show.feature_vote.user.current', [
-                        'votes' => trans_choice('forum.topics.show.feature_vote.user.count', Auth::user()->osu_featurevotes),
-                    ]) }}
-                </p>
-            @endif
-        </div>
-    @endif
-
-    <div class="forum-posts-load-link js-header--alt">
-        <a href="{{ route("forum.topics.show", ["topics" => $topic->topic_id, "end" => ($posts->first()->post_id - 1)]) }}" class="js-forum-posts-show-more js-forum__posts-show-more--previous" data-mode="previous">Load more</a>
-        <span><i class="fa fa-refresh fa-spin"></i></span>
-    </div>
-
-    @include("forum.topics._posts")
-
-    <div class="forum-posts-load-link {{ $firstPostPosition + sizeof($posts) - 1 === $topic->postsCount() ? 'hidden' : '' }}">
-        <a href="{{ post_url($topic->topic_id, $posts->last()->post_id + 1, false) }}" class="js-forum-posts-show-more js-forum__posts-show-more--next" data-mode="next">Load more</a>
-        <span><i class="fa fa-refresh fa-spin"></i></span>
-    </div>
-
-    @if (priv_check('ForumTopicReply', $topic)->can())
-        <div class="js-forum-topic-reply--container js-sync-height--target forum-topic-reply" data-sync-height-id="forum-topic-reply">
-            {!! Form::open([
-                "url" => route("forum.topics.reply", $topic->topic_id),
-                "class" => "forum-post forum-post--reply js-forum-topic-reply js-sync-height--reference js-fixed-element js-editor-zoom",
-                "data-remote" => true,
-                "data-sync-height-target" => "forum-topic-reply",
-                'data-force-reload' => Auth::check() === false ? '1' : '0',
-            ]) !!}
-                <div class="forum-post__reply-container">
-                    <div class="osu-layout__row osu-layout__row--sm2-desktop osu-layout__row--full-height">
-                        <div class="forum-post__reply-content">
-                            <div class="forum-post__info-panel forum-post__info-panel--reply hidden-xs">
-                                @if (Auth::check() === true)
-                                    <div
-                                        class="avatar avatar--forum-reply"
-                                        style="background-image: url('{{ Auth::user()->user_avatar }}');"
-                                    ></div>
-                                @else
-                                    <div class="avatar avatar--forum-reply avatar--guest"></div>
-                                @endif
-                            </div>
-
-                            <div class="forum-post__reply-body">
-                                <div class="forum-post__content forum-post__content--edit-bar">
-                                    <div class="post-editor__actions post-editor__actions--preview">
-                                        <a class="js-forum-reply-preview--hide btn-osu btn-osu--small btn-osu-default active post-editor__action post-editor__action--preview">{{ trans('forum.topic.create.preview_hide') }}</a>
-                                        <a class="js-forum-reply-preview--show btn-osu btn-osu--small btn-osu-default post-editor__action post-editor__action--preview">
-                                            {{ trans('forum.topic.create.preview') }}
-                                        </a>
-                                    </div>
-                                </div>
-                                <div class="js-forum-reply-write forum-post__body forum-post__body--reply-form">
-                                    <div class="forum-post__content forum-post__content--edit-body">
-                                        @include('forum.posts._form_body', ['postBody' => [
-                                            'focus' => false,
-                                            'extraClasses' => 'forum-post-content--reply js-forum-topic-reply--input',
-                                        ]])
-                                    </div>
-
-                                    <div class="forum-post__content forum-post__content forum-post__content--edit-bar hidden">
-                                    </div>
-
-                                    <div class="forum-post__content forum-post__content forum-post__content--edit-bar">
-                                        @include("forum.topics._post_box_footer", ["submitText" => trans("forum.topic.post_reply")])
-                                    </div>
-                                </div>
-                                <div class="js-forum-reply-preview hidden forum-post__body">
-                                    <div class="forum-post__content forum-post__content--main">
-                                        <div class="forum-post-content js-forum-reply-preview--content">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="forum-post__actions forum-post__actions--reply js-editor-zoom--hidden">
-                                <a href="#" class="js-forum-topic-reply--close btn-circle hidden">
-                                    <i class="fa fa-close"></i>
-                                </a>
-                            </div>
-                        </div>
+                        @if ($canEditTitle)
+                            <input
+                                class="forum-topic-title__title forum-topic-title__title--edit js-forum-topic-title--input"
+                                value="{{ $topic->topic_title }}"
+                                name="forum_topic[topic_title]"
+                                data-url="{{ route('forum.topics.update', $topic->getKey()) }}"
+                                maxlength="{{ App\Models\Forum\Topic::MAX_FIELD_LENGTHS['topic_title'] }}"
+                            />
+                        @endif
+                    </div>
+                    <div class="forum-topic-title__post-time">
+                        {!! trans("forum.post.posted_at", ["when" => timeago($topic->topic_time)]) !!}
                     </div>
                 </div>
-            {!! Form::close() !!}
-        </div>
 
-        <div class="js-sticky-footer" data-sticky-footer-disabled="1" data-sticky-footer-target="forum-topic-reply"></div>
-    @else
-        <div class="osu-layout__row osu-layout__row--sm2-desktop">
-            <div class="warning-box">
-                <div class="warning-box__icon">
-                    <i class="fa fa-warning"></i>
+                <div class="forum-topic-title__item forum-topic-title__item--counters">
+                    <div class="grid-items">
+                        @include('forum.topics._header_total_counter', ['newTopic' => false])
+
+                        @if ($userCanModerate)
+                            @include('forum.topics._header_deleted_counter', ['newTopic' => false])
+                        @endif
+                    </div>
                 </div>
-
-                {{ priv_check('ForumTopicReply', $topic)->message() }}
             </div>
+
+            @if (count($toolbarItems) > 0)
+                <div class="forum-topic-toolbar js-forum-topic-title--toggleable">
+                    @if (isset($toolbarItems['edit_title']))
+                        <div class="forum-topic-toolbar__item forum-topic-toolbar__item--title-edit">
+                            <button
+                                type="button"
+                                class="btn-osu-big btn-osu-big--forum-secondary js-forum-topic-title--cancel"
+                            >
+                                {{ trans('common.buttons.cancel') }}
+                            </button>
+                        </div>
+
+                        <div class="forum-topic-toolbar__item forum-topic-toolbar__item--title-edit">
+                            <button
+                                type="button"
+                                class="btn-osu-big btn-osu-big--forum-primary js-forum-topic-title--save"
+                            >
+                                {{ trans('common.buttons.save') }}
+                            </button>
+                        </div>
+
+                        <div class="forum-topic-toolbar__item">
+                            <button
+                                type="button"
+                                class="btn-osu-big btn-osu-big--forum-secondary js-forum-topic-title--edit-start"
+                            >
+                                {{ trans('forum.topics.edit_title.start') }}
+                            </button>
+                        </div>
+                    @endif
+
+                    @if (isset($toolbarItems['edit_cover']))
+                        <div class="forum-topic-toolbar__item">
+                            @include('forum.topics._cover_editor')
+                        </div>
+                    @endif
+                </div>
+            @endif
         </div>
-    @endif
+
+        @if ($topic->poll()->exists())
+            <div class="js-header--main">
+                @include('forum.topics._poll')
+            </div>
+        @endif
+
+        @if ($topic->isFeatureTopic())
+            <div class="js-header--main">
+                @include('forum.topics._feature_vote')
+            </div>
+        @endif
+
+        @include('objects._show_more_link', [
+            'additionalClasses' => 'js-header--alt js-forum-posts-show-more js-forum__posts-show-more--previous',
+            'arrow' => 'up',
+            'attributes' => ['data-mode' => 'previous'],
+            'hidden' => $posts->first()->post_id === $firstPostId,
+            'modifiers' => ['forum-topic'],
+            'url' => route('forum.topics.show', ['topic' => $topic, 'end' => ($posts->first()->post_id - 1), 'with_deleted' => $showDeleted ? '1' : '0']),
+        ])
+
+        @include('forum.topics._posts')
+
+        @include('objects._show_more_link', [
+            'additionalClasses' => 'js-forum-posts-show-more js-forum__posts-show-more--next',
+            'attributes' => ['data-mode' => 'next'],
+            'hidden' => $firstPostPosition + sizeof($posts) - 1 >= $topic->postsCount(),
+            'modifiers' => ['forum-topic'],
+            'url' => route('forum.topics.show', ['topic' => $topic, 'start' => $posts->last()->post_id + 1, 'with_deleted' => $showDeleted ? '1' : '0']),
+        ])
+    </div>
+
+    @include('forum.topics._reply')
+    <div class="js-sticky-footer" data-sticky-footer-disabled="1" data-sticky-footer-target="forum-topic-reply"></div>
 @endsection
 
 @section('permanent-fixed-footer')
@@ -218,23 +194,22 @@
 
         <div class="forum-topic-nav__content">
             <div class="forum-topic-nav__group">
-                @include('forum.topics._lock', ['topic' => $topic])
+                @include('forum.topics._lock', compact('topic'))
 
-                @if (priv_check('ForumTopicModerate', $topic)->can())
-                    @include('forum.topics._moderate_pin', ['topic' => $topic])
+                @if ($userCanModerate)
+                    @include('forum.topics._moderate_pin', compact('topic'))
+                    @include('forum.topics._moderate_move', compact('topic'))
+
+                    @if ($topic->isIssue())
+                        @foreach ($topic::ISSUE_TAGS as $type)
+                            @include("forum.topics._issue_tag_{$type}")
+                        @endforeach
+                    @endif
+
+                    @include('forum.topics._moderate_toggle_deleted')
                 @endif
 
-                @if (priv_check('ForumTopicModerate', $topic)->can())
-                    @include('forum.topics._moderate_move', ['topic' => $topic])
-                @endif
-
-                @if ($topic->isIssue() && priv_check('ForumTopicModerate', $topic)->can())
-                    @foreach ($topic::ISSUE_TAGS as $type)
-                        @include("forum.topics._issue_tag_{$type}")
-                    @endforeach
-                @endif
-
-                @include('forum.topics._watch', ['topic' => $topic, 'state' => $isWatching])
+                @include('forum.topics._watch', ['topic' => $topic, 'state' => $watch])
             </div>
 
             <div class="forum-topic-nav__group forum-topic-nav__group--main">
@@ -248,11 +223,13 @@
                     data-tooltip-float="fixed"
                     title="{{ trans('forum.topic.jump.first') }}"
                 >
-                    <i class="fa fa-angle-double-left"></i>
+                    <span class="forum-topic-nav__item-content">
+                        <i class="fas fa-angle-double-left"></i>
+                    </span>
                 </a>
 
-                <a
-                    href="#"
+                <button
+                    type="button"
                     class="js-forum-posts-seek--jump
                         forum-topic-nav__item
                         forum-topic-nav__item--main
@@ -261,8 +238,10 @@
                     data-tooltip-float="fixed"
                     title="{{ trans('forum.topic.jump.previous') }}"
                 >
-                    <i class="fa fa-angle-left"></i>
-                </a>
+                    <span class="forum-topic-nav__item-content">
+                        <i class="fas fa-angle-left"></i>
+                    </span>
+                </button>
 
                 <div class="
                     post-counter
@@ -293,10 +272,13 @@
                         forum-topic-nav__counter--middle"
                     >/</span>
 
-                    <span class="forum-topic-nav__counter
-                        forum-topic-nav__counter--right
-                        js-forum__total-count"
-                    >{{ $topic->postsCount() }}</span>
+                    <span
+                        class="forum-topic-nav__counter
+                            forum-topic-nav__counter--right
+                            js-forum__total-count
+                        "
+                        data-total="{{ $topic->postsCount() }}"
+                    >{{ i18n_number_format($topic->postsCount()) }}</span>
 
                     <div
                         class="js-forum-topic-post-jump--cover forum-topic-nav__counter-cover"
@@ -305,8 +287,8 @@
                     ></div>
                 </div>
 
-                <a
-                    href="#"
+                <button
+                    type="button"
                     class="js-forum-posts-seek--jump
                         forum-topic-nav__item
                         forum-topic-nav__item--main
@@ -315,12 +297,13 @@
                     data-tooltip-float="fixed"
                     title="{{ trans('forum.topic.jump.next') }}"
                 >
-                    <i class="fa fa-angle-right"></i>
-                </a>
-
+                    <span class="forum-topic-nav__item-content">
+                        <i class="fas fa-angle-right"></i>
+                    </span>
+                </button>
 
                 <a
-                    href="{{ route("forum.topics.show", ["topics" => $topic->topic_id, "end" => $topic->topic_last_post_id]) }}#forum-post-{{ $topic->topic_last_post_id }}"
+                    href="{{ route('forum.topics.show', ['topic' => $topic, 'end' => $topic->topic_last_post_id]) }}#forum-post-{{ $topic->topic_last_post_id }}"
                     class="js-forum-posts-seek--jump
                         forum-topic-nav__item
                         forum-topic-nav__item--main
@@ -329,20 +312,58 @@
                     data-tooltip-float="fixed"
                     title="{{ trans('forum.topic.jump.last') }}"
                 >
-                    <i class="fa fa-angle-double-right"></i>
+                    <span class="forum-topic-nav__item-content">
+                        <i class="fas fa-angle-double-right"></i>
+                    </span>
                 </a>
             </div>
 
             <div class="forum-topic-nav__group forum-topic-nav__group--right">
-                @if (priv_check('ForumTopicReply', $topic)->can())
-                    <a
-                        href="#"
-                        class="btn-circle btn-circle--topic-nav js-forum-topic-reply--new"
-                        data-tooltip-float="fixed"
-                        title="{{ trans('forum.topics.actions.reply') }}"
+                <a
+                    href="{{ route('search', ['mode' => 'forum_post', 'topic_id' => $topic->getKey()]) }}"
+                    class="btn-circle btn-circle--topic-nav"
+                    data-tooltip-float="fixed"
+                    title="{{ trans('forum.topics.actions.search') }}"
+                >
+                    <span class="btn-circle__content">
+                        <i class="fas fa-search"></i>
+                    </span>
+                </a>
+
+                @if (Auth::check())
+                    <button
+                        type="button"
+                        class="btn-osu-big btn-osu-big--forum-reply js-forum-topic-reply--toggle"
                     >
-                        <i class="fa fa-plus"></i>
-                    </a>
+                        <span class="btn-osu-big__content">
+                            <span class="btn-osu-big__left">
+                                <span class="btn-osu-big__text-top">
+                                    {{ trans('forum.topics.actions.reply') }}
+                                </span>
+                            </span>
+
+                            <span class="btn-osu-big__toggle">
+                                <i class="fas fa-dot-circle"></i>
+                            </span>
+                        </span>
+                    </button>
+                @else
+                    <button
+                        type="button"
+                        class="btn-osu-big btn-osu-big--forum-reply js-user-link"
+                    >
+                        <span class="btn-osu-big__content">
+                            <span class="btn-osu-big__icon">
+                                <i class="fas fa-sign-in-alt"></i>
+                            </span>
+
+                            <span class="btn-osu-big__left">
+                                <span class="btn-osu-big__text-top">
+                                    {{ trans('forum.topics.actions.login_reply') }}
+                                </span>
+                            </span>
+                        </span>
+                    </button>
                 @endif
             </div>
         </div>

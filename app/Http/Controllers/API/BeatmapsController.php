@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -34,17 +34,21 @@ class BeatmapsController extends Controller
 
     public function lookup()
     {
-        $checksum = Request::input('checksum');
-        $filename = urldecode(Request::input('filename'));
+        $params = get_params(request()->all(), null, ['checksum:string', 'filename:string', 'id:int']);
 
         // Try to look up via checksum
-        if (present($checksum)) {
-            $beatmap = Beatmap::where('checksum', $checksum)->first();
+        if (present($params['checksum'] ?? null)) {
+            $beatmap = Beatmap::where('checksum', $params['checksum'])->first();
         }
 
-        // If checksum is missing (or not found), try to look up by filename instead
-        if (!isset($beatmap) && present($filename)) {
-            $beatmap = Beatmap::where('filename', $filename)->firstOrFail();
+        // And then via id if checksum lookup doesn't yield anything
+        if (!isset($beatmap) && isset($params['id'])) {
+            $beatmap = Beatmap::find($params['id']);
+        }
+
+        // Lastly, try to look up by filename
+        if (!isset($beatmap) && present($params['filename'] ?? null)) {
+            $beatmap = Beatmap::where('filename', $params['filename'])->first();
         }
 
         if (!isset($beatmap)) {

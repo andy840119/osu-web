@@ -1,0 +1,79 @@
+/**
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
+ *
+ *    This file is part of osu!web. osu!web is distributed with the hope of
+ *    attracting more community contributions to the core ecosystem of osu!.
+ *
+ *    osu!web is free software: you can redistribute it and/or modify
+ *    it under the terms of the Affero GNU General Public License version 3
+ *    as published by the Free Software Foundation.
+ *
+ *    osu!web is distributed WITHOUT ANY WARRANTY; without even the implied
+ *    warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *    See the GNU Affero General Public License for more details.
+ *
+ *    You should have received a copy of the GNU Affero General Public License
+ *    along with osu!web.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+// TODO: rename to bbcode-editor
+.post-editor {
+  @_top: post-editor;
+  @padding--large: 20px;
+  @padding--small: 10px;
+
+  &--profile-page {
+    margin-left: -@gutter-profile-page;
+
+    @media @desktop {
+      margin-left: -@gutter-profile-page-desktop;
+    }
+  }
+
+  &__footer {
+    display: flex;
+    flex: 1 0 auto;
+
+    padding: @padding--small;
+
+    background-color: @osu-colour-b5;
+    background-image: linear-gradient(fade(#000, 30%), transparent 3px);
+
+    .@{_top}--beatmap-description-editor & {
+      padding: @padding--small @padding--large @padding--large;
+    }
+
+    .@{_top}--profile-page & {
+      padding: 10px @gutter-profile-page;
+
+      @media @desktop {
+        padding-left: @gutter-profile-page-desktop;
+        padding-right: @gutter-profile-page-desktop;
+      }
+    }
+  }
+
+  &__textarea {
+    .reset-input();
+    padding: @padding--small;
+    min-height: 200px;
+    width: 100%;
+    resize: vertical;
+    font-family: @font-family-monospace;
+
+    .@{_top}--beatmap-description-editor & {
+      padding: @padding--large;
+      max-height: calc(100vh - 200px);
+    }
+
+    .@{_top}--profile-page & {
+      height: 400px;
+      padding: 10px @gutter-profile-page;
+
+      @media @desktop {
+        padding-left: @gutter-profile-page-desktop;
+        padding-right: @gutter-profile-page-desktop;
+      }
+    }
+  }
+}

@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -40,10 +40,15 @@ trait UserAvatar
     public function getUserAvatarAttribute($value)
     {
         if (!present($value)) {
-            return 'https://s.ppy.sh/images/blank.jpg';
+            return config('osu.avatar.default');
         }
 
         return $this->avatarStorage()->url(str_replace('_', '?', $value));
+    }
+
+    public function setUserAvatarAttribute($value)
+    {
+        $this->attributes['user_avatar'] = presence($value) ?? '';
     }
 
     public function setAvatar($file)
@@ -52,11 +57,12 @@ trait UserAvatar
             $this->avatarStorage()->delete($this->user_id);
         } else {
             $filePath = $file->getRealPath();
-            (new ImageProcessor($filePath, [256, 256], 100000))->process();
+            $processor = new ImageProcessor($filePath, [256, 256], 100000);
+            $processor->process();
 
             $this->avatarStorage()->put($this->user_id, file_get_contents($filePath), 'public');
 
-            $entry = $this->user_id.'_'.time();
+            $entry = $this->user_id.'_'.time().'.'.$processor->ext();
         }
 
         if (present(config('osu.avatar.cache_purge_prefix'))) {

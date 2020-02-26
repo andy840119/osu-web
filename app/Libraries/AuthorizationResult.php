@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -21,6 +21,7 @@
 namespace App\Libraries;
 
 use App\Exceptions\AuthorizationException;
+use App\Exceptions\VerificationRequiredException;
 use Illuminate\Auth\AuthenticationException;
 
 class AuthorizationResult
@@ -46,6 +47,17 @@ class AuthorizationResult
         return presence($this->rawMessage, 'unauthorized');
     }
 
+    public function requireLogin()
+    {
+        return $this->rawMessage() === 'require_login' ||
+            ends_with($this->rawMessage(), '.require_login');
+    }
+
+    public function requireVerification()
+    {
+        return $this->rawMessage() === 'require_verification';
+    }
+
     public function message()
     {
         if ($this->can()) {
@@ -61,9 +73,10 @@ class AuthorizationResult
             return;
         }
 
-        if ($this->rawMessage() === 'require_login' ||
-            ends_with($this->rawMessage(), '.require_login')) {
+        if ($this->requireLogin()) {
             $class = AuthenticationException::class;
+        } elseif ($this->requireVerification()) {
+            $class = VerificationRequiredException::class;
         } else {
             $class = AuthorizationException::class;
         }

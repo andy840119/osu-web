@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -25,13 +25,33 @@ use League\Fractal;
 
 class BeatmapsetCompactTransformer extends Fractal\TransformerAbstract
 {
+    protected $availableIncludes = [
+        'beatmaps',
+    ];
+
     public function transform(Beatmapset $beatmapset)
     {
         return [
             'id' => $beatmapset->beatmapset_id,
             'title' => $beatmapset->title,
             'artist' => $beatmapset->artist,
+            'creator' => $beatmapset->creator,
+            'user_id' => $beatmapset->user_id,
             'covers' => $beatmapset->allCoverURLs(),
+            'favourite_count' => $beatmapset->favourite_count,
+            'play_count' => $beatmapset->play_count,
+            'preview_url' => $beatmapset->previewURL(),
+            'video' => $beatmapset->video,
+            'source' => $beatmapset->source,
+            'status' => $beatmapset->status(),
         ];
+    }
+
+    public function includeBeatmaps(Beatmapset $beatmapset)
+    {
+        return $this->collection(
+            $beatmapset->beatmaps,
+            new BeatmapCompactTransformer()
+        );
     }
 }

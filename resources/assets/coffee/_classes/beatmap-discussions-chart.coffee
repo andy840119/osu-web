@@ -1,5 +1,5 @@
 ###
-#    Copyright 2015-2017 ppy Pty. Ltd.
+#    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 #
 #    This file is part of osu!web. osu!web is distributed with the hope of
 #    attracting more community contributions to the core ecosystem of osu!.
@@ -104,17 +104,11 @@ class @BeatmapDiscussionsChart
       .selectAll ".#{bn}__point"
       .data @data, (d) => d.id
 
-    @svgPointsEnter = @svgPoints.enter()
+    svgPointsEnter = @svgPoints.enter()
       .append 'a'
-      .attr 'xlink:href', (d) =>
-        BeatmapDiscussionHelper.hash discussionId: d.id
-      .attr 'class', (d) =>
-        "#{bn}__point #{bn}__point--#{d.message_type}"
-      .on 'click', (d) =>
-        d3.event.preventDefault()
-        $.publish 'beatmapDiscussion:jump', id: d.id
+      .classed "#{bn}__point", true
 
-    @svgPointsEnter
+    svgPointsEnter
       .append 'line'
       .classed "#{bn}__bar", true
       .attr 'x1', 0
@@ -123,7 +117,7 @@ class @BeatmapDiscussionsChart
       .attr 'y2', @dimensions.barTop + @dimensions.barHeight
       .attr 'stroke', "url(#bar-gradient-#{@id})"
 
-    @svgPointsEnter
+    svgPointsEnter
       .append 'rect'
       .classed "#{bn}__target-area", true
       .attr 'x', -@dimensions.targetAreaWidth / 2
@@ -131,17 +125,42 @@ class @BeatmapDiscussionsChart
       .attr 'y', @dimensions.barTop
       .attr 'height', @dimensions.targetAreaHeight
 
-    @svgPointsEnter
+    svgPointsEnter
       .append 'text'
       .classed "#{bn}__icon", true
       .style 'text-anchor', 'middle'
       .attr 'y', @dimensions.iconTop
-      .append 'tspan'
-      .classed 'fa', true
-      .html (d) =>
-        BeatmapDiscussionHelper.messageType.iconText[d.message_type]
 
     @svgPoints.exit().remove()
+
+    @svgPoints = svgPointsEnter.merge(@svgPoints)
+
+    @svgPoints
+      .attr 'xlink:href', (d) =>
+        BeatmapDiscussionHelper.url discussion: d
+      .attr 'class', (d) ->
+        type = if d.resolved then 'resolved' else _.kebabCase(d.message_type)
+        classes = "js-beatmap-discussion--jump #{bn}__point #{bn}__point--#{type}"
+        classes += " #{bn}__point--deleted" if d.deleted_at?
+        classes
+      .attr 'title', (d) ->
+        BeatmapDiscussionHelper.formatTimestamp d.timestamp
+      .attr 'data-tooltip-position', 'bottom center'
+      .attr 'data-tooltip-modifiers', 'extra-padding'
+
+    # refresh the icons
+    @svgPoints
+      .select(".#{bn}__icon > tspan").remove()
+
+    @svgPoints
+      .select ".#{bn}__icon"
+      .append 'tspan'
+      .attr 'class', (d) ->
+        type = if d.resolved then 'resolved' else _.camelCase(d.message_type)
+        BeatmapDiscussionHelper.messageType.iconText[type][0]
+      .html (d) ->
+        type = if d.resolved then 'resolved' else _.camelCase(d.message_type)
+        BeatmapDiscussionHelper.messageType.iconText[type][1]
 
     @resize()
 
@@ -185,10 +204,8 @@ class @BeatmapDiscussionsChart
 
 
   positionPoints: =>
-    @svgPointsEnter
-      .merge(@svgPoints)
-      .attr 'transform', (d) =>
-        "translate(#{Math.round(@scaleX(d.timestamp))}, 0)"
+    @svgPoints.attr 'transform', (d) =>
+      "translate(#{Math.round(@scaleX(d.timestamp))}, 0)"
 
 
   resize: =>

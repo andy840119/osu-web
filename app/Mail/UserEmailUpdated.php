@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -21,10 +21,11 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class UserEmailUpdated extends Mailable
+class UserEmailUpdated extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
@@ -48,7 +49,7 @@ class UserEmailUpdated extends Mailable
     public function build()
     {
         return $this
-            ->text(i18n_view('emails.user_email_updated'))
-            ->subject(trans('accounts.update_email.email_subject'));
+            ->text('emails.user_email_updated')
+            ->subject(trans('mail.user_email_updated.subject'));
     }
 }

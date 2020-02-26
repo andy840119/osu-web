@@ -1,5 +1,5 @@
 ###
-#    Copyright 2015-2017 ppy Pty. Ltd.
+#    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 #
 #    This file is part of osu!web. osu!web is distributed with the hope of
 #    attracting more community contributions to the core ecosystem of osu!.
@@ -16,47 +16,54 @@
 #    along with osu!web.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
-{div} = React.DOM
+import { Header } from './header'
+import { Hype } from './hype'
+import { Info } from './info'
+import { Scoreboard } from './scoreboard'
+import { Comments } from 'comments'
+import { CommentsManager } from 'comments-manager'
+import HeaderV4 from 'header-v4'
+import { PlaymodeTabs } from 'playmode-tabs'
+import * as React from 'react'
+import { div } from 'react-dom-factories'
 el = React.createElement
 
-class BeatmapsetPage.Main extends React.Component
+export class Main extends React.Component
   constructor: (props) ->
     super props
-
-    optionsHash = BeatmapsetPageHash.parse location.hash
-    @initialPage = optionsHash.page
-
-    beatmaps = _.concat props.beatmapset.beatmaps, props.beatmapset.converts
-    beatmaps = BeatmapHelper.group beatmaps
-
-    currentBeatmap = BeatmapHelper.find
-      group: beatmaps
-      id: optionsHash.beatmapId
-      mode: optionsHash.playmode
-
-    # fall back to the first mode that has beatmaps in this mapset
-    currentBeatmap ?= BeatmapHelper.default items: beatmaps[optionsHash.playmode]
-    currentBeatmap ?= BeatmapHelper.default group: beatmaps
 
     @scoreboardXhr = null
     @favouriteXhr = null
 
-    @state =
-      beatmaps: beatmaps
-      currentBeatmap: currentBeatmap
-      favcount: props.beatmapset.favourite_count
-      hasFavourited: props.beatmapset.has_favourited
-      loading: false
-      currentScoreboardType: 'global'
-      enabledMods: []
-      scores: []
-      userScore: null
-      userScorePosition: -1
+    @state = JSON.parse(@props.container.dataset.state ? 'null')
+    @restoredState = @state?
 
+    if !@restoredState
+      optionsHash = BeatmapsetPageHash.parse location.hash
 
-  setHash: =>
-    osu.setHash BeatmapsetPageHash.generate
-      beatmap: @state.currentBeatmap
+      beatmaps = _.concat props.beatmapset.beatmaps, props.beatmapset.converts
+      beatmaps = BeatmapHelper.group beatmaps
+
+      currentBeatmap = BeatmapHelper.find
+        group: beatmaps
+        id: optionsHash.beatmapId
+        mode: optionsHash.playmode
+
+      # fall back to the first mode that has beatmaps in this mapset
+      currentBeatmap ?= BeatmapHelper.default items: beatmaps[optionsHash.playmode]
+      currentBeatmap ?= BeatmapHelper.default group: beatmaps
+
+      @state =
+        beatmaps: beatmaps
+        currentBeatmap: currentBeatmap
+        favcount: props.beatmapset.favourite_count
+        hasFavourited: props.beatmapset.has_favourited
+        loading: false
+        currentScoreboardType: 'global'
+        enabledMods: []
+        scores: []
+        userScore: null
+        userScorePosition: -1
 
 
   setCurrentScoreboard: (_e, {
@@ -70,7 +77,7 @@ class BeatmapsetPage.Main extends React.Component
     @setState
       currentScoreboardType: scoreboardType
 
-    if scoreboardType != 'global' && !currentUser.isSupporter
+    if scoreboardType != 'global' && !currentUser.is_supporter
       @setState scores: []
       return
 
@@ -147,7 +154,7 @@ class BeatmapsetPage.Main extends React.Component
 
   toggleFavourite: =>
     @favouriteXhr = $.ajax
-      url: laroute.route('beatmapsets.update-favourite', beatmapset: @props.beatmapset.id)
+      url: laroute.route('beatmapsets.favourites.store', beatmapset: @props.beatmapset.id)
       method: 'post'
       dataType: 'json'
       data:
@@ -155,8 +162,14 @@ class BeatmapsetPage.Main extends React.Component
 
     .done (data) =>
       @setState
-        favcount: data.favcount
-        hasFavourited: data.favourited
+        favcount: data.favourite_count
+        hasFavourited: !@state.hasFavourited
+
+    .fail (xhr, status) =>
+      if status == 'abort'
+        return
+
+      osu.ajaxError xhr
 
   componentDidMount: ->
     $.subscribe 'beatmapset:beatmap:set.beatmapsetPage', @setCurrentBeatmap
@@ -164,9 +177,12 @@ class BeatmapsetPage.Main extends React.Component
     $.subscribe 'beatmapset:scoreboard:set.beatmapsetPage', @setCurrentScoreboard
     $.subscribe 'beatmapset:hoveredbeatmap:set.beatmapsetPage', @setHoveredBeatmap
     $.subscribe 'beatmapset:favourite:toggle.beatmapsetPage', @toggleFavourite
+    $(document).on 'turbolinks:before-cache.beatmapsetPage', @saveStateToContainer
 
     @setHash()
-    @setCurrentScoreboard null, scoreboardType: 'global', resetMods: true
+
+    if !@restoredState || @state.loading
+      @setCurrentScoreboard null, scoreboardType: 'global', resetMods: true
 
 
   componentWillUnmount: ->
@@ -174,10 +190,12 @@ class BeatmapsetPage.Main extends React.Component
     @scoreboardXhr?.abort()
     @favouriteXhr?.abort()
 
+
   render: ->
-    div className: 'osu-layout__section',
+    div className: 'osu-layout osu-layout--full',
+      @renderPageHeader()
       div className: 'osu-layout__row osu-layout__row--page-compact',
-        el BeatmapsetPage.Header,
+        el Header,
           beatmapset: @props.beatmapset
           beatmaps: @state.beatmaps
           currentBeatmap: @state.currentBeatmap
@@ -185,29 +203,56 @@ class BeatmapsetPage.Main extends React.Component
           favcount: @state.favcount
           hasFavourited: @state.hasFavourited
 
-        el BeatmapsetPage.Info,
+        el Info,
           beatmapset: @props.beatmapset
           beatmap: @state.currentBeatmap
 
       div className: 'osu-layout__section osu-layout__section--extra',
-        div className: 'osu-page',
-          el BeatmapsetPage.Scoreboard,
-            type: @state.currentScoreboardType
-            beatmap: @state.currentBeatmap
-            scores: @state.scores
-            userScore: @state.userScore?.score
-            userScorePosition: @state.userScore?.position
-            enabledMods: @state.enabledMods
-            countries: @props.countries
-            loading: @state.loading
-            hasScores: @props.beatmapset.has_scores
+        if @props.beatmapset.can_be_hyped
+          div className: 'osu-page osu-page--generic-compact',
+            el Hype,
+              beatmapset: @props.beatmapset
+              currentUser: currentUser
 
-        if @props.beatmapset.ranked > 0
-          div className: 'osu-page osu-page--comments',
-            el ReactDisqusThread,
-              shortname: disqusShortName
-              identifier: "beatmapset_#{@props.beatmapset.id}"
-              title: "#{@props.beatmapset.artist} - #{@props.beatmapset.title} (mapped by #{@props.beatmapset.creator})"
-              url: "#{document.location.origin}#{laroute.route('beatmapsets.show', beatmapset: @props.beatmapset.id)}"
-              remote_auth_s3: currentUser.disqus_auth?.auth_data
-              api_key: currentUser.disqus_auth?.public_key
+        if @state.currentBeatmap.is_scoreable
+          div className: 'osu-page osu-page--generic',
+            el Scoreboard,
+              type: @state.currentScoreboardType
+              beatmap: @state.currentBeatmap
+              scores: @state.scores
+              userScore: @state.userScore?.score
+              userScorePosition: @state.userScore?.position
+              enabledMods: @state.enabledMods
+              countries: @props.countries
+              loading: @state.loading
+              isScoreable: @state.currentBeatmap.is_scoreable
+
+        div className: 'osu-page osu-page--generic-compact',
+          el CommentsManager,
+            component: Comments
+            commentableType: 'beatmapset'
+            commentableId: @props.beatmapset.id
+
+
+  renderPageHeader: =>
+    el HeaderV4,
+      section: osu.trans('layout.header.beatmapsets._')
+      subSection: osu.trans('layout.header.beatmapsets.show')
+      theme: 'beatmapsets'
+      titleAppend: el PlaymodeTabs,
+        beatmaps: @state.beatmaps
+        currentMode: @state.currentBeatmap.mode
+        hrefFunc: @tabHrefFunc
+        showCounts: true
+
+  saveStateToContainer: =>
+    @props.container.dataset.state = JSON.stringify(@state)
+
+
+  setHash: =>
+    osu.setHash BeatmapsetPageHash.generate
+      beatmap: @state.currentBeatmap
+
+
+  tabHrefFunc: (mode) ->
+    BeatmapsetPageHash.generate mode: mode

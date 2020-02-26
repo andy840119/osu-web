@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -17,62 +17,199 @@
  *    You should have received a copy of the GNU Affero General Public License
  *    along with osu!web.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+namespace Tests\Models;
+
 use App\Models\Beatmap;
 use App\Models\BeatmapDiscussion;
 use App\Models\Beatmapset;
-use App\Models\BeatmapsetDiscussion;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
+use Tests\TestCase;
 
 class BeatmapDiscussionTest extends TestCase
 {
+    /**
+     * Valid beatmapset status always maps to a scope method sanity test.
+     *
+     * @dataProvider validBeatmapsetStatuses
+     */
+    public function testBeatmapsetScopesExist($scope)
+    {
+        $this->assertInstanceOf(Builder::class, Beatmapset::$scope());
+    }
+
+    public function testMapperPost()
+    {
+        $mapper = factory(User::class)->create();
+        $beatmapset = factory(Beatmapset::class)->create([
+            'discussion_enabled' => true,
+            'user_id' => $mapper->getKey(),
+        ]);
+        $beatmap = $beatmapset->beatmaps()->save(factory(Beatmap::class)->make());
+
+        $discussion = $this->newDiscussion($beatmapset);
+        $discussion->fill([
+            'beatmap_id' => $beatmap->beatmap_id,
+            'message_type' => 'mapper_note',
+            'user_id' => $mapper->getKey(),
+        ]);
+
+        $this->assertTrue($discussion->isValid());
+
+        $discussion->message_type = 'problem';
+        $this->assertTrue($discussion->isValid());
+
+        $discussion->message_type = 'suggestion';
+        $this->assertTrue($discussion->isValid());
+
+        $discussion->message_type = 'praise';
+        $this->assertTrue($discussion->isValid());
+
+        $discussion->beatmapset->update(['approved' => Beatmapset::STATES['pending']]);
+        $discussion->beatmap_id = null;
+        $discussion->message_type = 'hype';
+        $this->assertFalse($discussion->isValid());
+    }
+
+    public function testModderPost()
+    {
+        $mapper = factory(User::class)->create();
+        $beatmapset = factory(Beatmapset::class)->create([
+            'discussion_enabled' => true,
+            'user_id' => $mapper->getKey(),
+        ]);
+        $beatmap = $beatmapset->beatmaps()->save(factory(Beatmap::class)->make());
+        $modder = factory(User::class)->create();
+
+        $discussion = $this->newDiscussion($beatmapset);
+        $discussion->fill([
+            'beatmap_id' => $beatmap->beatmap_id,
+            'message_type' => 'mapper_note',
+            'user_id' => $modder->getKey(),
+        ]);
+
+        $this->assertTrue($discussion->isValid());
+
+        $discussion->message_type = 'problem';
+        $this->assertTrue($discussion->isValid());
+
+        $discussion->message_type = 'suggestion';
+        $this->assertTrue($discussion->isValid());
+
+        $discussion->message_type = 'praise';
+        $this->assertTrue($discussion->isValid());
+
+        $discussion->beatmapset->update(['approved' => Beatmapset::STATES['ranked']]);
+        $discussion->message_type = 'hype';
+        $this->assertFalse($discussion->isValid());
+
+        $discussion->beatmap_id = null;
+        $this->assertFalse($discussion->isValid());
+
+        $discussion->beatmapset->update(['approved' => Beatmapset::STATES['pending']]);
+        $this->assertTrue($discussion->isValid());
+    }
+
     public function testIsValid()
     {
-        $beatmapset = factory(Beatmapset::class)->create();
+        $beatmapset = factory(Beatmapset::class)->create(['discussion_enabled' => true]);
         $beatmap = $beatmapset->beatmaps()->save(factory(Beatmap::class)->make());
 
         $otherBeatmapset = factory(Beatmapset::class)->create();
         $otherBeatmap = $otherBeatmapset->beatmaps()->save(factory(Beatmap::class)->make());
 
-        $beatmapsetDiscussion = BeatmapsetDiscussion::create(['beatmapset_id' => $beatmap->beatmapset_id]);
+        $validTimestamp = ($beatmap->total_length + 10) * 1000;
+        $invalidTimestamp = $validTimestamp + 1;
 
-        $invalidTimestamp = $beatmap->total_length * 1000 + 1;
+        // blank everything not fine
+        $discussion = $this->newDiscussion($beatmapset);
+        $this->assertFalse($discussion->isValid());
 
-        // blank everything is fine (general)
-        $discussion = $this->newDiscussion($beatmapsetDiscussion);
+        // is valid with message_type
+        $discussion = $this->newDiscussion($beatmapset);
+        $discussion->fill(['message_type' => 'problem']);
         $this->assertTrue($discussion->isValid());
 
-        // just beatmap_id is fine (per-beatmap general)
-        $discussion = $this->newDiscussion($beatmapsetDiscussion);
+        // just beatmap_id is not fine (per-beatmap general)
+        $discussion = $this->newDiscussion($beatmapset);
         $discussion->fill(['beatmap_id' => $beatmap->beatmap_id]);
+        $this->assertFalse($discussion->isValid());
+
+        // with beatmap_id and message_type is fine (per-beatmap general)
+        $discussion = $this->newDiscussion($beatmapset);
+        $discussion->fill([
+            'beatmap_id' => $beatmap->beatmap_id,
+            'message_type' => 'problem',
+        ]);
         $this->assertTrue($discussion->isValid());
 
         // complete data is fine as well
-        $discussion = $this->newDiscussion($beatmapsetDiscussion);
+        $discussion = $this->newDiscussion($beatmapset);
+        $discussion->fill(['timestamp' => $validTimestamp, 'message_type' => 'praise', 'beatmap_id' => $beatmap->beatmap_id]);
+        $this->assertTrue($discussion->isValid());
+
+        // Including timestamp 0
+        $discussion = $this->newDiscussion($beatmapset);
         $discussion->fill(['timestamp' => 0, 'message_type' => 'praise', 'beatmap_id' => $beatmap->beatmap_id]);
         $this->assertTrue($discussion->isValid());
 
         // just timestamp is not valid
-        $discussion = $this->newDiscussion($beatmapsetDiscussion);
-        $discussion->fill(['timestamp' => 0]);
-        $this->assertFalse($discussion->isValid());
-
-        // nor is just message_type
-        $discussion = $this->newDiscussion($beatmapsetDiscussion);
-        $discussion->fill(['message_type' => 'praise']);
-        $this->assertFalse($discussion->isValid());
-
-        // nor is wrong beatmap_id
-        $discussion = $this->newDiscussion($beatmapsetDiscussion);
-        $discussion->fill(['timestamp' => 0, 'message_type' => 'praise', 'beatmap_id' => $otherBeatmap->beatmap_id]);
+        $discussion = $this->newDiscussion($beatmapset);
+        $discussion->fill(['timestamp' => $validTimestamp]);
         $this->assertFalse($discussion->isValid());
 
         // nor is wrong timestamp
-        $discussion = $this->newDiscussion($beatmapsetDiscussion);
+        $discussion = $this->newDiscussion($beatmapset);
         $discussion->fill(['timestamp' => $invalidTimestamp, 'message_type' => 'praise', 'beatmap_id' => $beatmap->beatmap_id]);
         $this->assertFalse($discussion->isValid());
     }
 
-    private function newDiscussion($beatmapsetDiscussion)
+    public function testSoftDeleteOrExplode()
     {
-        return new BeatmapDiscussion(['beatmapset_discussion_id' => $beatmapsetDiscussion->id]);
+        $beatmapset = factory(Beatmapset::class)->create(['discussion_enabled' => true]);
+        $beatmap = $beatmapset->beatmaps()->save(factory(Beatmap::class)->make());
+        $user = factory(User::class)->create();
+        $discussion = BeatmapDiscussion::create([
+            'beatmapset_id' => $beatmapset->getKey(),
+            'beatmap_id' => $beatmap->getKey(),
+            'user_id' => $user->getKey(),
+            'message_type' => 'suggestion',
+        ]);
+
+        $this->assertFalse($discussion->trashed());
+
+        // Soft delete.
+        $discussion->softDeleteOrExplode($user);
+        $discussion = $discussion->fresh();
+        $this->assertTrue($discussion->trashed());
+
+        // Restore.
+        $discussion->restore($user);
+        $discussion = $discussion->fresh();
+        $this->assertFalse($discussion->trashed());
+
+        // Soft delete with deleted beatmap.
+        $beatmap->delete();
+        $discussion->softDeleteOrExplode($user);
+        $discussion = $discussion->fresh();
+        $this->assertTrue($discussion->trashed());
+
+        // Restore with deleted beatmap.
+        $discussion->restore($user);
+        $discussion = $discussion->fresh();
+        $this->assertFalse($discussion->trashed());
+    }
+
+    public function validBeatmapsetStatuses()
+    {
+        return array_map(function ($status) {
+            return [camel_case($status)];
+        }, BeatmapDiscussion::VALID_BEATMAPSET_STATUSES);
+    }
+
+    private function newDiscussion($beatmapset)
+    {
+        return new BeatmapDiscussion(['beatmapset_id' => $beatmapset->getKey()]);
     }
 }

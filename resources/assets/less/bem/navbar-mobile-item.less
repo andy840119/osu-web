@@ -1,0 +1,114 @@
+/**
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
+ *
+ *    This file is part of osu!web. osu!web is distributed with the hope of
+ *    attracting more community contributions to the core ecosystem of osu!.
+ *
+ *    osu!web is free software: you can redistribute it and/or modify
+ *    it under the terms of the Affero GNU General Public License version 3
+ *    as published by the Free Software Foundation.
+ *
+ *    osu!web is distributed WITHOUT ANY WARRANTY; without even the implied
+ *    warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *    See the GNU Affero General Public License for more details.
+ *
+ *    You should have received a copy of the GNU Affero General Public License
+ *    along with osu!web.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+.navbar-mobile-item {
+  @_top: navbar-mobile-item;
+
+  flex: none;
+  display: flex;
+  flex-direction: column;
+
+  &--user {
+    flex-direction: row;
+    align-items: center;
+    background-color: @osu-colour-b4;
+  }
+
+  &__icon {
+    width: @navbar-mobile--content-height;
+    margin-right: 10px;
+    text-align: center;
+
+    // state changes at bottom
+    &--closed {
+      display: inline-block;
+
+      .@{_top}__main.js-click-menu--active > & {
+        display: none;
+      }
+    }
+
+    &--opened {
+      display: none;
+
+      .@{_top}__main.js-click-menu--active > & {
+        display: inline-block;
+      }
+    }
+  }
+
+  &__locale-flag {
+    display: inline-block;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    width: 20px;
+    align-self: stretch;
+    margin-right: 5px;
+  }
+
+  &__main {
+    @_colour-base: osu-hsla(@osu-colour-c1, 50%);
+    @_colour-hover: @osu-colour-c1;
+
+    .reset-input();
+    .link-plain();
+    color: @_colour-base;
+    display: flex;
+    align-items: center;
+    padding: 10px @navbar-padding-horizontal;
+
+    &:focus {
+      color: @_colour-base;
+    }
+
+    &:hover, &:active {
+      color: @_colour-hover;
+    }
+
+    &.js-click-menu--active {
+      color: @_colour-hover;
+    }
+  }
+
+  &__submenu {
+    display: none;
+    list-style: none;
+    padding: 0;
+
+    &.js-click-menu--active {
+      display: block;
+    }
+  }
+
+  &__submenu-item {
+    .link-plain();
+    display: flex;
+    align-items: center;
+    padding: 5px @navbar-padding-horizontal 5px (@navbar-mobile--content-height + 30px);
+    color: @osu-colour-c2;
+
+    &:hover {
+      background-color: @osu-colour-b3;
+    }
+
+    .link-hover({
+      color: @osu-colour-c2;
+    });
+  }
+}

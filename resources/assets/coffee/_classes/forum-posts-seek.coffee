@@ -1,5 +1,5 @@
 ###
-#    Copyright 2015-2017 ppy Pty. Ltd.
+#    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 #
 #    This file is part of osu!web. osu!web is distributed with the hope of
 #    attracting more community contributions to the core ecosystem of osu!.
@@ -28,9 +28,14 @@ class @ForumPostsSeek
 
     $(document).on 'click', '.js-forum-posts-seek--jump', @jump
 
+    addEventListener 'turbolinks:before-cache', @reset
+
 
   hideTooltip: =>
+    return if @tooltip.length == 0
+
     Fade.out @tooltip[0]
+
 
   move: (e) =>
     e.preventDefault()
@@ -57,13 +62,28 @@ class @ForumPostsSeek
     jumpTarget = $target.attr('data-jump-target')
 
     n = switch jumpTarget
-      when 'first' then 1
-      when 'last' then totalPosts
-      when 'previous' then currentPost - 10
-      when 'next' then currentPost + 10
+      when 'first'
+        1
+      when 'last'
+        totalPosts
+      when 'previous'
+        defaultN = currentPost - 10
+        # avoid jumping beyond loaded posts
+        minLoadedN = @forum.postPosition @forum.posts[0]
+        Math.max(defaultN, minLoadedN)
+      when 'next'
+        defaultN = currentPost + 10
+        # avoid jumping beyond loaded posts
+        maxLoadedN = @forum.postPosition @forum.endPost()
+        Math.min(defaultN, maxLoadedN)
 
     $target.blur()
     @forum.jumpTo n
+
+
+  reset: =>
+    Timeout.clear @_autohide
+    @hideTooltip()
 
 
   setPostPosition: (x) =>

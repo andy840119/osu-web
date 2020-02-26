@@ -1,5 +1,5 @@
 ###
-#    Copyright 2015-2017 ppy Pty. Ltd.
+#    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 #
 #    This file is part of osu!web. osu!web is distributed with the hope of
 #    attracting more community contributions to the core ecosystem of osu!.
@@ -16,23 +16,18 @@
 #    along with osu!web.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
-propsFunction = =>
+import { Main } from './profile-page/main'
+
+reactTurbolinks.registerPersistent 'profile-page', Main, true, (target) ->
   user = osu.parseJson('json-user')
 
   user: user
   userPage: user.page
-  userAchievements: user.userAchievements
-  allRankHistories: user.allRankHistories
-  allStats: user.allStatistics
-  allScores: user.allScores
-  allScoresBest: user.allScoresBest
-  allScoresFirst: user.allScoresFirst
-  favouriteBeatmapsets: user.favouriteBeatmapsets
-  rankedAndApprovedBeatmapsets: user.rankedAndApprovedBeatmapsets
-  beatmapPlaycounts: user.beatmapPlaycounts
+  userAchievements: user.user_achievements
+  currentMode: osu.parseJson('json-currentMode')
+  rankHistory: osu.parseJson('json-rankHistory')
   withEdit: user.id == window.currentUser.id
-  recentActivities: user.recentActivities
-  recentlyReceivedKudosu: user.recentlyReceivedKudosu
   achievements: _.keyBy osu.parseJson('json-achievements'), 'id'
-
-reactTurbolinks.register 'profile-page', ProfilePage.Main, propsFunction
+  perPage: osu.parseJson('json-perPage')
+  extras: osu.parseJson('json-extras')
+  container: target

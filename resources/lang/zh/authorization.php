@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -19,134 +19,161 @@
  */
 
 return [
+    'require_login' => '登录以继续。',
+    'require_verification' => '请验证以继续。',
+    'restricted' => "账户处于限制模式，无法进行该操作。",
+    'silenced' => "账户被禁言，无法进行该操作。",
+    'unauthorized' => '没有权限。',
+
     'beatmap_discussion' => [
         'destroy' => [
-            'has_reply' => '无法删除有回复的讨论',
+            'is_hype' => '无法撤销推荐。',
+            'has_reply' => '无法删除有回复的讨论。',
         ],
         'nominate' => [
-            'exhausted' => '您今天的提名次数已达上限,请明天再试.',
+            'exhausted' => '你今天的提名次数已达上限，请明天再试。',
+            'full_bn_required' => '你必须是一位完整提名者才能执行有效提名。',
+            'full_bn_required_hybrid' => '你必须是一位完整提名者，以提名包含多个游戏模式的谱面。',
+            'incorrect_state' => '操作出错了，请尝试刷新页面。',
+            'owner' => "不能提名自己的谱面。",
         ],
         'resolve' => [
-            'general_discussion' => '常规讨论不能被标记为已解决.',
-            'not_owner' => '只有楼主和谱面所有者才能标记为已解决.',
+            'not_owner' => '只有楼主和谱面所有者才能标记为已解决。',
+        ],
+
+        'store' => [
+            'mapper_note_wrong_user' => '只有谱面作者或谱面管理团队、质量保证团队成员可以发布备注。',
         ],
 
         'vote' => [
-            'limit_exceeded' => '在投更多票之前请稍等一会',
-            'owner' => '不能为自己的讨论投票!',
+            'limit_exceeded' => '在投更多票之前请稍等一会。',
+            'owner' => "不能为自己的讨论投票！",
+            'wrong_beatmapset_state' => '只能给 pending 谱面的讨论投票。',
         ],
     ],
 
     'beatmap_discussion_post' => [
+        'destroy' => [
+            'not_owner' => '你只能删除你自己的帖子。',
+            'resolved' => '你不能删除已解决的讨论帖。',
+            'system_generated' => '自动生成的帖子无法删除。',
+        ],
+
         'edit' => [
-            'system_generated' => '自动回复不能被编辑.',
-            'not_owner' => '只有发帖人可以编辑.',
+            'not_owner' => '只有作者可以编辑。',
+            'resolved' => '你不能编辑已解决讨论里的帖子。',
+            'system_generated' => '无法编辑自动回复。',
+        ],
+
+        'store' => [
+            'beatmapset_locked' => '该谱面因需要探讨而被锁定。',
         ],
     ],
 
     'chat' => [
-        'channel' => [
-            'read' => [
-                'no_access' => '您没有权限进入该频道.',
-            ],
-        ],
-        'message' => [
-            'send' => [
-                'channel' => [
-                    'no_access' => '需要有指定频道的权限.',
-                    'moderated' => '频道已满.',
-                    'not_lazer' => '您当前只能在#lazer聊天.',
-                ],
+        'blocked' => '无法向已加入黑名单的用户发消息，或者你已经被拉黑了。',
+        'friends_only' => '用户阻止了来自非好友的消息。',
+        'moderated' => '该频道现在正在被管制中。',
+        'no_access' => '你没有权限访问该频道。',
+        'restricted' => '在账户禁言、受限或被 ban 期间不能发消息。',
+    ],
 
-                'not_allowed' => '当账户受限时不能发言.',
-            ],
+    'comment' => [
+        'update' => [
+            'deleted' => "无法编辑已删除的回复。",
         ],
     ],
 
     'contest' => [
-        'voting_over' => '您不能在投票阶段结束后变更您的投票.',
+        'voting_over' => '投票已结束，无法修改投票。',
     ],
 
     'forum' => [
+        'moderate' => [
+            'no_permission' => '没有权限编辑该板块。',
+        ],
+
         'post' => [
             'delete' => [
-                'only_last_post' => '只有最后的回复可以被删除.',
-                'locked' => '不能删除被锁定主题的回复.',
-                'no_forum_access' => '没有访问该板块的权限.',
-                'not_owner' => '只有发表此回复的人才能删除此回复.',
+                'only_last_post' => '只有最后的回复可以被删除。',
+                'locked' => '无法删除已锁定主题的回复。',
+                'no_forum_access' => '没有权限进入该板块。',
+                'not_owner' => '只有作者能删除此回复。',
             ],
 
             'edit' => [
-                'locked' => '此回复已被锁定.',
-                'no_forum_access' => '没有访问该板块的权限.',
-                'not_owner' => '只有发表此回复的人才能编辑此回复.',
-                'topic_locked' => '不能编辑被锁定主题的回复.',
+                'deleted' => '无法编辑已删除的回复。',
+                'locked' => '此回复已被锁定。',
+                'no_forum_access' => '没有权限进入该板块。',
+                'not_owner' => '只有作者能编辑此回复。',
+                'topic_locked' => '无法编辑被锁定主题的回复。',
+            ],
+
+            'store' => [
+                'play_more' => '在发帖之前先玩上两局吧！如果你在游戏时遇到问题，请在 Help 或 中文 版块发帖求助。',
+                'too_many_help_posts' => "如果你想发更多的帖子，再多玩几把吧！如果你仍然在游戏时遇到问题请邮件联系 support@ppy.sh", // FIXME: unhardcode email address.
             ],
         ],
 
         'topic' => [
             'reply' => [
-                'double_post' => '您刚刚发表过回复,请等一会,或者编辑您的上一条回复.',
-                'locked' => '不能回复被锁定的主题.',
-                'no_forum_access' => '没有访问该板块的权限.',
-                'no_permission' => '没有回复的权限.',
+                'double_post' => '请编辑您的最后一条评论, 而不是再发一遍。',
+                'locked' => '无法回复被锁定的主题。',
+                'no_forum_access' => '没有权限进入该板块。',
+                'no_permission' => '没有权限，无法回复。',
 
                 'user' => [
-                    'require_login' => '回复前请先登录.',
-                    'restricted' => '账户受限时不能回复.',
-                    'silenced' => '被禁言时不能回复.',
+                    'require_login' => '回复前请先登录。',
+                    'restricted' => "账户处于限制模式，无法回复。",
+                    'silenced' => "账户被禁言，无法回复。",
                 ],
             ],
 
             'store' => [
-                'no_forum_access' => '没有访问该板块的权限.',
-                'no_permission' => '没有创建新主题的权限.',
-                'forum_closed' => '该板块被关闭,不能发表新主题.',
+                'no_forum_access' => '没有权限，无法进入该板块。',
+                'no_permission' => '没有权限，无法创建新主题。',
+                'forum_closed' => '该板块已关闭，无法发表新主题。',
             ],
 
             'vote' => [
-                'no_forum_access' => '没有访问该板块的权限.',
-                'over' => '投票已经结束,不能再投票.',
-                'voted' => '不允许改变投票.',
+                'no_forum_access' => '没有权限，无法进入该板块。',
+                'over' => '投票已结束！',
+                'play_more' => '要在论坛中投票，你需要玩更长时间的游戏。',
+                'voted' => '不允许修改投票。',
 
                 'user' => [
-                    'require_login' => '投票前请先登录.',
-                    'restricted' => '账户受限时不能投票.',
-                    'silenced' => '被禁言时不能回复.',
+                    'require_login' => '投票前请先登录。',
+                    'restricted' => "账户处于限制模式，无法投票。",
+                    'silenced' => "账户被禁言，无法投票。",
                 ],
             ],
 
             'watch' => [
-                'no_forum_access' => '没有访问该板块的权限.',
+                'no_forum_access' => '没有权限，无法进入该板块。',
             ],
         ],
 
         'topic_cover' => [
             'edit' => [
-                'uneditable' => '指定的封面不可用.',
-                'not_owner' => '只有楼主才能编辑封面.',
+                'uneditable' => '指定的题图不可用。',
+                'not_owner' => '只有楼主可以编辑题图。',
+            ],
+            'store' => [
+                'forum_not_allowed' => '本论坛不接受主题涵盖范围。',
             ],
         ],
 
         'view' => [
-            'admin_only' => '只有管理员才能查看该板块.',
+            'admin_only' => '该板块仅限管理员查看。',
         ],
     ],
-
-    'require_login' => '请先登录.',
-
-    'unauthorized' => '没有权限.',
-
-    'silenced' => '被禁言时不能这样做.',
-
-    'restricted' => '被限制时不能这样做.',
 
     'user' => [
         'page' => [
             'edit' => [
-                'locked' => '用户界面被锁定.',
-                'not_owner' => '只能编辑自己的用户界面.',
-                'require_supporter_tag' => '需要成为支持者.',
+                'locked' => '个人页面被锁定。',
+                'not_owner' => '只能编辑自己的个人页面。',
+                'require_supporter_tag' => '需要成为支持者。',
             ],
         ],
     ],

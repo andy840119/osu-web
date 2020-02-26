@@ -1,5 +1,5 @@
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -17,6 +17,22 @@
  */
 
 .store-slider {
+  @preset-font-size: 12px;
+  @preset-height: 20px;
+  @preset-margin: 4px;
+  @preset-width: 36px;
+  @callout-padding: 6px;
+  @callout-extension: 32px;
+
+  // inset slider to prevent overflows making the page wider.
+  // the 2px is to add a gap between the callout and the page edge.
+  padding: 0 ((@callout-extension / 2) - (@callout-padding * 2) + 2px);
+  padding: 0 (@slider-callout--width / 2 - @gutter-v2 + 2px);
+
+  @media @desktop {
+    padding: 0 ((@slider-callout--width + @callout-extension) / 2 - @gutter-v2-desktop + 2px);
+  }
+
   &__bigtext { // stupid name
     font-size: @font-size--large;
     font-weight: 600;
@@ -25,21 +41,26 @@
   &__fake-callout {
     position: absolute;
     left: @slider-handle-width / 2;
-    padding: 0 32px @slider-callout--arrow-height 32px;
+    padding-bottom: @slider-callout--arrow-height;
     transform: translateX(-50%);
-    bottom: calc(100% ~'+' @slider-callout--arrow-gap);
+    bottom: calc(100% + @slider-callout--arrow-gap);
   }
 
   &__callout {
-    background-color: #333;
-    color: #fff;
+    background-color: @osu-colour-b3;
+    color: @osu-colour-c1;
     font-size: @font-size--normal;
     text-align: center;
     border-radius: 10px;
     padding: 6px;
     width: @slider-callout--width;
 
-    &:after, &:before {
+    @media @desktop {
+      // make fatter for wider viewports.
+      width: @slider-callout--width + @callout-extension;
+    }
+
+    &::after, &::before {
       top: 100%;
       left: 50%;
       border: solid transparent;
@@ -51,27 +72,26 @@
       transform: scaleX(0.5);
     }
 
-    &:after {
-      border-top-color: #333;
+    &::after {
+      border-top-color: @osu-colour-b3;
       border-width: @slider-callout--arrow-height;
       margin-left: -@slider-callout--arrow-height;
     }
   }
 
   &__preset {
-    background-color: #666;
+    background-color: @osu-colour-b3;
     color: #fff;
     cursor: pointer;
-    font-size: 12px;
-    margin: 4px;
-    height: 20px;
-    width: 36px;
-    line-height: 19px;
+    margin: @preset-margin;
+    height: @preset-height;
+    width: @preset-width;
+    line-height: @preset-height - 1px;
     text-align: center;
     border-radius: 10px;
 
     .js-store--disabled & {
-      background-color: #999;
+      background-color: @osu-colour-b1;
       pointer-events: none;
       cursor: default;
     }
@@ -79,21 +99,30 @@
     &.js-slider-preset--active {
       background-color: @pink-darker;
       .js-store--disabled & {
-        background-color: #999;
+        background-color: @osu-colour-b1;
       }
     }
   }
 
+  &__presets {
+    align-items: center;
+    font-size: @preset-font-size;
+  }
+
+  &__presets-blurb {
+    margin: 0 @preset-margin;
+  }
+
   &__subtext { // stupid name
     margin-top: 2px;
-    color: #999;
+    color: @osu-colour-c2;
   }
 
   .ui-slider {
-    background-color: darkgray;
+    background-color: @osu-colour-b3;
     .js-store--disabled & {
       .ui-slider-handle, .ui-slider-range {
-        background-color: #999;
+        background-color: @osu-colour-b1;
       }
     }
     .ui-slider-range {

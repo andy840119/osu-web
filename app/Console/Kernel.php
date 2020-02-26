@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -31,18 +31,48 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
+        Commands\DisqusImport::class,
+
+        Commands\EsCreateSearchBlacklist::class,
+        Commands\EsIndexDocuments::class,
+        Commands\EsIndexWiki::class,
+
         // modding stuff
         Commands\ModdingQueueUpdateCommand::class,
         Commands\ModdingRankCommand::class,
         Commands\ModdingScoreIndexCommand::class,
 
         Commands\UserForumStatSyncCommand::class,
+        Commands\BeatmapsetsHypeSyncCommand::class,
 
-        // parsing html with regexp
-        Commands\StoreCheckOrderTrackingStatus::class,
+        Commands\StoreCleanupStaleOrders::class,
+        Commands\StoreExpireProducts::class,
+
+        // builds
+        Commands\BuildsCreate::class,
         Commands\BuildsUpdatePropagationHistory::class,
 
+        // leaderboard recalculation
         Commands\RankingsRecalculateCountryStats::class,
+
+        // moddingv2 kudosu recalculation
+        Commands\KudosuRecalculateDiscussionsGrants::class,
+
+        // fix username change fail :D
+        Commands\FixUsernameChangeTopicCache::class,
+
+        // fix userchannel deletion fail
+        Commands\FixMissingUserChannels::class,
+
+        // fix forum display order
+        Commands\FixForumDisplayOrder::class,
+
+        Commands\MigrateFreshAllCommand::class,
+
+        Commands\OAuthDeleteExpiredTokens::class,
+
+        Commands\UserBestScoresCheckCommand::class,
+        Commands\UserRecalculateRankCounts::class,
     ];
 
     /**
@@ -54,14 +84,23 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('store:tracking')
-            ->cron('0 0,8,16 * * *');
+        $schedule->command('store:cleanup-stale-orders')
+            ->daily();
+
+        $schedule->command('store:expire-products')
+            ->hourly();
 
         $schedule->command('builds:update-propagation-history')
             ->everyThirtyMinutes();
 
         $schedule->command('rankings:recalculate-country')
             ->cron('25 0,3,6,9,12,15,18,21 * * *');
+
+        $schedule->command('modding:rank')
+            ->cron('*/20 * * * *');
+
+        $schedule->command('oauth:delete-expired-tokens')
+            ->cron('14 1 * * *');
     }
 
     protected function commands()

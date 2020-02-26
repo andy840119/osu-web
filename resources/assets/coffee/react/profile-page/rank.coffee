@@ -1,5 +1,5 @@
 ###
-#    Copyright 2015-2017 ppy Pty. Ltd.
+#    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 #
 #    This file is part of osu!web. osu!web is distributed with the hope of
 #    attracting more community contributions to the core ecosystem of osu!.
@@ -16,21 +16,17 @@
 #    along with osu!web.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
+import * as React from 'react'
+import { ValueDisplay } from 'value-display'
 el = React.createElement
 
-class ProfilePage.Rank extends React.Component
-  render: =>
-    return el('div') unless @props.rank.is_ranked
 
-    el 'div', className: 'user-profile-header__basic user-profile-header__basic--right',
-        el 'p',
-          className: 'user-profile-header__text user-profile-header__text--large'
-          title: osu.trans('users.show.rank.global', mode: osu.trans("beatmaps.mode.#{@props.currentMode}"))
-          el 'span', className: 'user-profile-header__rank-icon',
-            el Icon, name: "osu-#{@props.currentMode}-o"
-          "##{@props.rank.global.toLocaleString()}"
-        if @props.countryName?
-          el 'p',
-            className: 'user-profile-header__text'
-            title: osu.trans('users.show.rank.country', mode: osu.trans("beatmaps.mode.#{@props.currentMode}"))
-            "#{@props.countryName} ##{@props.rank.country.toLocaleString()}"
+export Rank = ({type, stats, modifiers}) ->
+  el ValueDisplay,
+    modifiers: modifiers
+    label: osu.trans("users.show.rank.#{type}_simple")
+    value:
+      if stats.rank[type]?
+        "##{osu.formatNumber(stats.rank[type])}"
+      else
+        '-'

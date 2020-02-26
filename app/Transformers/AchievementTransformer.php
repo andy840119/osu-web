@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -28,6 +28,7 @@ class AchievementTransformer extends Fractal\TransformerAbstract
     public function transform(Achievement $achievement)
     {
         return [
+            'icon_url' => $achievement->iconUrl(),
             'id' => $achievement->achievement_id,
             'name' => $achievement->name,
             'grouping' => $achievement->grouping,
@@ -35,6 +36,7 @@ class AchievementTransformer extends Fractal\TransformerAbstract
             'slug' => $achievement->slug,
             'description' => $achievement->description,
             'mode' => $achievement->mode,
+            'instructions' => $achievement->quest_instructions,
         ];
     }
 }

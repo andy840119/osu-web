@@ -1,5 +1,5 @@
 {{--
-    Copyright 2015-2017 ppy Pty. Ltd.
+    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 
     This file is part of osu!web. osu!web is distributed with the hope of
     attracting more community contributions to the core ecosystem of osu!.
@@ -30,21 +30,20 @@ Timeout.set(0, function () {
 
     var $el = $(".js-forum-post[data-post-id={{ $post->post_id }}]");
 
-    var $toggle = $el.find(".js-post-delete-toggle");
+    @yield("action")
 
-    @if (priv_check('ForumTopicModerate')->can())
-        @yield("moderatorAction")
+    @if (priv_check('ForumModerate', $post->forum)->can())
+        var $toggle;
 
-        $toggle.replaceWith({!! json_encode(render_to_string('forum.topics._post_hide_action', [
-            'post' => $post,
-        ])) !!});
-    @else
-        $el.css({
-            minHeight: "0px",
-            height: $el.css("height")
-        }).slideUp(null, function () {
-            return $el.remove();
-        });
+        @foreach (['circle', 'menu'] as $type)
+            $toggle = $el.find(".js-post-delete-toggle--{{ $type }}");
+
+            $toggle.replaceWith({!! json_encode(view('forum.posts._button_delete', [
+                'post' => $post,
+                'type' => $type,
+            ])->render()) !!});
+        @endforeach
+        osu.pageChange();
     @endif
 
     window.forum.setTotalPosts(window.forum.totalPosts() + {{ $countDifference }});

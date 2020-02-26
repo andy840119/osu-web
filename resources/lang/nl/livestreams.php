@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -22,8 +22,7 @@ return [
     'top-headers' => [
         'headline' => 'Live Streams',
         'description' => 'Op basis van de index wordt de data elke vijf minuten van twitch.tv afgehaald. Start gerust zelf een stream en kom in de lijst te staan! Check voor meer informatie de wiki pagina over livestreamen.',
-    ],
-    'headers' => [
-        'regular' => 'Momenteel aan het streamen',
+
+        'link' => 'de wiki pagina bij het live streamen',
     ],
 ];

@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -29,10 +29,15 @@ class ContestsController extends Controller
 
     public function index()
     {
-        $contests = Contest::where('visible', true)->orderBy('id', 'desc')->get();
+        $contests = Contest::orderBy('id', 'desc');
 
-        return view('contests.index')
-            ->with('contests', $contests);
+        if (!Auth::check() || !Auth::user()->isAdmin()) {
+            $contests->where('visible', true);
+        }
+
+        return ext_view('contests.index', [
+            'contests' => $contests->get(),
+        ]);
     }
 
     public function show($id)
@@ -54,13 +59,15 @@ class ContestsController extends Controller
         }
 
         if ($contest->isVotingStarted()) {
-            return view('contests.voting')
-                    ->with('contestMeta', $contest)
-                    ->with('contests', $contests);
+            return ext_view('contests.voting', [
+                'contestMeta' => $contest,
+                'contests' => $contests,
+            ]);
         } else {
-            return view('contests.enter')
-                ->with('contestMeta', $contest)
-                ->with('contest', $contests->first());
+            return ext_view('contests.enter', [
+                'contestMeta' => $contest,
+                'contest' => $contests->first(),
+            ]);
         }
     }
 }

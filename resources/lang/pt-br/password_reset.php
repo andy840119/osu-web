@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -19,8 +19,6 @@
  */
 
 return [
-    'title' => 'Redefinir senha',
-
     'button' => [
         'cancel' => 'Cancelar',
         'resend' => 'Reenviar email de verificação',
@@ -28,14 +26,10 @@ return [
         'start' => 'Começar',
     ],
 
-    'email' => [
-        'subject' => 'Recuperação da conta no osu!',
-    ],
-
     'error' => [
         'contact_support' => 'Por favor, entre em contato com o suporte para recuperar a sua conta.',
-        'is_privileged' => 'Fala com o peppy lul.',
-        'missing_key' => 'Necessário.',
+        'is_privileged' => 'Fala com o peppy, lul.',
+        'missing_key' => 'Obrigatório.',
         'too_many_tries' => 'Número de tentativas excedido.',
         'user_not_found' => 'O usuário selecionado não existe.',
         'wrong_key' => 'Código incorreto.',
@@ -55,5 +49,10 @@ return [
 
     'starting' => [
         'username' => 'Insira endereço de email ou nome de usuário',
+
+        'support' => [
+            '_' => 'Precisa de mais assistência? Entre em contato conosco através do nosso :button.',
+            'button' => 'sistema de suporte',
+        ],
     ],
 ];

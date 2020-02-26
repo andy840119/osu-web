@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -22,6 +22,7 @@ namespace App\Libraries;
 
 use App\Models\BanchoStats;
 use App\Models\Count;
+use Auth;
 use Cache;
 
 class CurrentStats
@@ -33,7 +34,7 @@ class CurrentStats
 
     public function __construct()
     {
-        $data = Cache::remember('current_stats:v1', 5, function () {
+        $data = Cache::remember('current_stats:v1', 300, function () {
             $stats = BanchoStats::stats();
             $latest = array_last($stats);
 
@@ -45,6 +46,7 @@ class CurrentStats
             ];
         });
 
+        $this->onlineFriends = Auth::user() ? Auth::user()->friends()->online()->count() : 0;
         $this->currentOnline = $data['currentOnline'];
         $this->currentGames = $data['currentGames'];
         $this->graphData = $data['graphData'];

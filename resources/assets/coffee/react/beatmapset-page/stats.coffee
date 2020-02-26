@@ -1,5 +1,5 @@
 ###
-#    Copyright 2015-2017 ppy Pty. Ltd.
+#    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 #
 #    This file is part of osu!web. osu!web is distributed with the hope of
 #    attracting more community contributions to the core ecosystem of osu!.
@@ -16,10 +16,12 @@
 #    along with osu!web.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
-{a, div, span, table, tbody, td, th, tr} = React.DOM
+import { BeatmapBasicStats } from 'beatmap-basic-stats'
+import * as React from 'react'
+import { a, div, span, table, tbody, td, th, tr, i } from 'react-dom-factories'
 el = React.createElement
 
-class BeatmapsetPage.Stats extends React.Component
+export class Stats extends React.Component
   constructor: (props) ->
     super props
 
@@ -54,15 +56,18 @@ class BeatmapsetPage.Stats extends React.Component
       ratingsPositive += count if rating >= 6 && rating <= 10
 
     ratingsAll = ratingsPositive + ratingsNegative
+    stats = switch @props.beatmap.mode
+              when 'mania' then ['cs', 'drain', 'accuracy', 'stars']
+              when 'taiko' then ['drain', 'accuracy', 'stars']
+              else ['cs', 'drain', 'accuracy', 'ar', 'stars']
 
     div className: 'beatmapset-stats',
       a
         href: '#'
         className: "beatmapset-stats__row beatmapsets-stats__row beatmapset-stats__row--preview js-audio--play"
-        'data-audio-url': @props.beatmapset.previewUrl
-        el Icon,
-          name: if @state.preview == 'ended' then 'play' else 'stop'
-          parentClass: 'beatmapset-stats__preview-icon'
+        'data-audio-url': @props.beatmapset.preview_url
+        span className: 'beatmapset-stats__preview-icon',
+          i className: "fas fa-#{if @state.preview == 'ended' then 'play' else 'stop'}"
 
         div
           className: 'beatmapset-stats__elapsed-bar'
@@ -71,14 +76,12 @@ class BeatmapsetPage.Stats extends React.Component
             width: "#{if @state.preview == 'playing' then '100%' else 0}"
 
       div className: 'beatmapset-stats__row beatmapset-stats__row--basic',
-        el BeatmapBasicStats,
-          beatmapset: @props.beatmapset
-          beatmap: @props.beatmap
+        el BeatmapBasicStats, beatmap: @props.beatmap
 
       div className: 'beatmapset-stats__row beatmapset-stats__row--advanced',
         table className: 'beatmap-stats-table',
           tbody null,
-            for stat in ['cs', 'drain', 'accuracy', 'ar', 'stars']
+            for stat in stats
               value =
                 if stat == 'stars'
                   @props.beatmap.difficulty_rating
@@ -87,9 +90,9 @@ class BeatmapsetPage.Stats extends React.Component
 
               valueText =
                 if stat == 'stars'
-                  value.toFixed 2
+                  osu.formatNumber(value, 2)
                 else
-                  value.toLocaleString()
+                  osu.formatNumber(value)
 
               if @props.beatmap.mode == 'mania' && stat == 'cs'
                 stat += '-mania'
@@ -105,7 +108,7 @@ class BeatmapsetPage.Stats extends React.Component
                         width: "#{10 * Math.min 10, value}%"
                 td className: 'beatmap-stats-table__value', valueText
 
-      if @props.beatmapset.has_scores
+      if @props.beatmapset.is_scoreable
         div className: 'beatmapset-stats__row beatmapset-stats__row--rating',
           div className: 'beatmapset-stats__rating-header', osu.trans 'beatmapsets.show.stats.user-rating'
           div className: 'bar--beatmap-rating',
@@ -115,8 +118,8 @@ class BeatmapsetPage.Stats extends React.Component
                 width: "#{(ratingsNegative / ratingsAll) * 100}%"
 
           div className: 'beatmapset-stats__rating-values',
-            span null, ratingsNegative.toLocaleString()
-            span null, ratingsPositive.toLocaleString()
+            span null, osu.formatNumber(ratingsNegative)
+            span null, osu.formatNumber(ratingsPositive)
 
           div className: 'beatmapset-stats__rating-header', osu.trans 'beatmapsets.show.stats.rating-spread'
 
@@ -126,7 +129,7 @@ class BeatmapsetPage.Stats extends React.Component
 
 
   previewInitializing: (_e, {url, player}) =>
-    if url != @props.beatmapset.previewUrl
+    if url != @props.beatmapset.preview_url
       return @previewStop()
 
     @setState
@@ -135,7 +138,7 @@ class BeatmapsetPage.Stats extends React.Component
 
 
   previewStart: (_e, {url, player}) =>
-    if url != @props.beatmapset.previewUrl
+    if url != @props.beatmapset.preview_url
       return @previewStop()
 
     @setState
@@ -152,7 +155,7 @@ class BeatmapsetPage.Stats extends React.Component
 
 
   _renderChart: ->
-    return if !@props.beatmapset.has_scores
+    return if !@props.beatmapset.is_scoreable
 
     unless @_ratingChart
       options =

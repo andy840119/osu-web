@@ -1,5 +1,5 @@
 {{--
-    Copyright 2015-2017 ppy Pty. Ltd.
+    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 
     This file is part of osu!web. osu!web is distributed with the hope of
     attracting more community contributions to the core ecosystem of osu!.
@@ -15,48 +15,37 @@
     You should have received a copy of the GNU Affero General Public License
     along with osu!web.  If not, see <http://www.gnu.org/licenses/>.
 --}}
-<li class="forum-topic-entry clickable-row u-forum--hover-area">
-    <div class="forum-topic-entry__bg"></div>
+@php
+    $newTopicAuth = priv_check('ForumTopicStore', $forum);
+    $newTopicEnabled = $newTopicAuth->can() || $newTopicAuth->requireLogin();
+    $blockClass = $blockClass ?? 'btn-osu-big btn-osu-big--forum-button';
 
-    <a
-        class="
-            forum-topic-entry__col
-            forum-topic-entry__col--icon
-            forum-topic-entry__col--icon-plus
-            js-login-required--click
-        "
-        href="{{ route('forum.topics.create', ['forum_id' => $forum]) }}"
-    >
-        <i class="fa fa-plus"></i>
-    </a>
-
-    <div class="forum-topic-entry__col forum-topic-entry__col--main">
-        <div class="forum-topic-entry__content forum-topic-entry__content--left">
-            <a
-                class="
-                    u-forum--link
-                    u-forum--hover-target
-                    clickable-row-link
-                    js-login-required--click
-                    forum-topic-entry__title
-                "
-                href="{{ route('forum.topics.create', ['forum_id' => $forum]) }}"
-            >
-                {{ trans('forum.topic.new_topic') }}
-            </a>
-        </div>
-    </div>
-
-    <a
-        class="
-            forum-topic-entry__col
-            forum-topic-entry__col--last-link
-            js-login-required--click
-            u-forum--link-hover
-        "
-        href="{{ route('forum.topics.create', ['forum_id' => $forum]) }}"
-        title="{{ trans('forum.topic.new_topic') }}"
-    >
-        <i class="fa fa-chevron-right"></i>
-    </a>
-</li>
+    if ($newTopicEnabled) {
+        $element = 'a';
+        $blockClass .= ' js-login-required--click';
+        $attributes = [
+            'href' => route('forum.topics.create', ['forum_id' => $forum]),
+        ];
+        if (!auth()->check()) {
+            $icon = 'fas fa-sign-in-alt';
+            $text = trans('forum.topic.new_topic_login');
+        }
+    } else {
+        $element = 'span';
+        $attributes = [
+            'disabled' => 1,
+            'title' => $newTopicAuth->message(),
+        ];
+    }
+@endphp
+<{!! $element !!}
+    class="{{ $blockClass }}"
+    @foreach ($attributes as $key => $value)
+        {{ $key }}="{{ $value }}"
+    @endforeach
+>
+    @if ($withIcon ?? true)
+        <i class="{{ $icon ?? 'fas fa-plus' }}"></i>
+    @endif
+    {{ $text ?? trans('forum.topic.new_topic') }}
+</{!! $element !!}>

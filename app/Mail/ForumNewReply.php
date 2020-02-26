@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -21,10 +21,11 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class ForumNewReply extends Mailable
+class ForumNewReply extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
@@ -50,8 +51,8 @@ class ForumNewReply extends Mailable
     public function build()
     {
         return $this
-            ->text(i18n_view('emails.forum.new_reply'))
-            ->subject(trans('forum.email.new_reply', [
+            ->text('emails.forum.new_reply')
+            ->subject(trans('mail.forum_new_reply.subject', [
                 'title' => $this->topic->topic_title,
             ]));
     }

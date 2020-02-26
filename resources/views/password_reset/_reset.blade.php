@@ -1,5 +1,5 @@
 {{--
-    Copyright 2015-2017 ppy Pty. Ltd.
+    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 
     This file is part of osu!web. osu!web is distributed with the hope of
     attracting more community contributions to the core ecosystem of osu!.
@@ -58,7 +58,7 @@
     <label class="password-reset__input-group">
         {{ trans('password_reset.started.password') }}
 
-        <input type="password" class="js-form-confirmation password-reset__input" name="user_password[password]">
+        <input type="password" class="js-form-confirmation password-reset__input" name="user[password]">
 
         <span class="password-reset__error js-form-error--error"></span>
     </label>
@@ -66,7 +66,7 @@
     <label class="password-reset__input-group">
         {{ trans('password_reset.started.password_confirmation') }}
 
-        <input type="password" class="js-form-confirmation password-reset__input" name="user_password[password_confirmation]">
+        <input type="password" class="js-form-confirmation password-reset__input" name="user[password_confirmation]">
 
         <span class="password-reset__error js-form-error--error"></span>
     </label>

@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -19,9 +19,16 @@
  */
 
 return [
-
     'beatmapsets' => [
+        'covers' => [
+            'regenerate' => 'Wygeneruj ponownie',
+            'regenerating' => 'Ponowne generowanie...',
+            'remove' => 'Usuń',
+            'removing' => 'Usuwanie...',
+            'title' => 'Tła zestawów beatmap',
+        ],
         'show' => [
+            'covers' => 'Zarządzaj tłami zestawu beatmap',
             'discussion' => [
                 '_' => 'Modowanie v2',
                 'activate' => 'aktywuj',
@@ -39,18 +46,18 @@ return [
 
                 'forum-name' => 'Forum #:id: :name',
 
-                'no-cover' => 'Nie ustawiono nagłówka',
+                'no-cover' => 'Nie ustawiono tła',
 
                 'submit' => [
                     'save' => 'Zapisz',
-                    'update' => 'Aktualizuj',
+                    'update' => 'Zaktualizuj',
                 ],
 
-                'title' => 'Lista nagłówków forum',
+                'title' => 'Lista teł forum',
 
                 'type-title' => [
-                    'default-topic' => 'Domyślny nagłówek tematu',
-                    'main' => 'Nagłówek forum',
+                    'default-topic' => 'Domyślne tło wątku',
+                    'main' => 'Tło forum',
                 ],
             ],
         ],
@@ -64,9 +71,8 @@ return [
 
     'pages' => [
         'root' => [
-            'title' => 'Konsola administratora',
-
             'sections' => [
+                'beatmapsets' => 'Zestawy beatmap',
                 'forum' => 'Forum',
                 'general' => 'Ogólne',
                 'store' => 'Sklep',
@@ -77,8 +83,15 @@ return [
     'store' => [
         'orders' => [
             'index' => [
-                'title' => 'Koszyk',
+                'title' => 'Lista zamówień',
             ],
+        ],
+    ],
+
+    'users' => [
+        'restricted_banner' => [
+            'title' => 'Konto tego użytkownika jest obecnie zablokowane.',
+            'message' => '(tylko administratorzy widzą tę wiadomość)',
         ],
     ],
 

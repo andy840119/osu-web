@@ -1,9 +1,12 @@
 <?php
 
+namespace Tests\Hashing;
+
 use App\Hashing\OsuHasher;
 use Illuminate\Contracts\Hashing\Hasher;
+use PHPUnit\Framework\TestCase;
 
-class OsuHasherTest extends PHPUnit_Framework_TestCase
+class OsuHasherTest extends TestCase
 {
     public function testBasicHashing()
     {

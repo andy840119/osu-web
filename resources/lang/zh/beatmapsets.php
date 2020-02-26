@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -20,90 +20,140 @@
 
 return [
     'availability' => [
-        'disabled' => '这张谱面现在不能下载',
-        'parts-removed' => '根据作者/第三方的要求,这张谱面已经被移除.', //可能不准确
-        'more-info' => '点击这里获得更多信息.',
+        'disabled' => '该谱面现在无法下载。',
+        'parts-removed' => '应 歌曲作者/第三方版权持有者 的要求，这张谱面已经下架。',
+        'more-info' => '点击这里查看更多信息。',
     ],
 
     'index' => [
-         'title' => '谱面列表',
-         'guest_title' => '谱面',
-     ],
+        'title' => '谱面列表',
+        'guest_title' => '谱面',
+    ],
 
     'show' => [
         'discussion' => '讨论',
 
-        'details' => [ //TODO 需要帮助
-            'made-by' => '制谱人: ',
-            'submitted' => '提交于 ',
-            'updated' => '上次更新于 ',
-            'ranked' => 'ranked 于 ',
-            'approved' => 'approved 于 ',
-            'qualified' => 'qualified 于 ',
-            'loved' => 'loved 于 ',
-            'logged-out' => '下载谱面前请先登录!',
+        'details' => [
+            'favourite' => '收藏这张谱面',
+            'logged-out' => '下载谱面前请先登录！',
+            'mapped_by' => '作者: :mapper',
+            'unfavourite' => '取消收藏',
+            'updated_timeago' => '上次更新于 :timeago',
+
             'download' => [
                 '_' => '下载',
-                'video' => '带视频',
-                'no-video' => '不带视频',
                 'direct' => 'osu!direct',
+                'no-video' => '不包含视频',
+                'video' => '包含视频',
             ],
-            'favourite' => '收藏这张谱面',
-            'unfavourite' => '取消收藏',
+
+            'login_required' => [
+                'bottom' => '以使用更多的功能',
+                'top' => '登录',
+            ],
         ],
-        'stats' => [ //TODO 需要帮助
-            'cs' => 'Circle Size',
-            'cs-mania' => 'Key Amount',
-            'drain' => 'HP Drain',
-            'accuracy' => 'Accuracy',
-            'ar' => 'Approach Rate',
-            'stars' => 'Star Difficulty',
-            'total_length' => 'Length',
-            'bpm' => 'BPM',
-            'count_circles' => 'Circle Count',
-            'count_sliders' => 'Slider Count',
-            'user-rating' => 'User Rating',
-            'rating-spread' => 'Rating Spread',
+
+        'favourites' => [
+            'limit_reached' => '谱面收藏数超出限制，请删除一些后再试。',
         ],
+
+        'hype' => [
+            'action' => '如果你觉得这张谱面很好玩，推荐它来帮助它发展到<strong>Ranked</strong>状态。',
+
+            'current' => [
+                '_' => '这张谱面正处于 :status 状态。',
+
+                'status' => [
+                    'pending' => 'pending',
+                    'qualified' => 'qualified',
+                    'wip' => '制作中',
+                ],
+            ],
+
+            'disqualify' => [
+                '_' => '如果你认为此谱面有问题，可以取消提名：:link',
+                'button_title' => '取消提名已被Qualified的图',
+            ],
+
+            'report' => [
+                '_' => '如果您发现此谱面有问题，请在 :link 通知审核团。',
+                'button' => '报告问题',
+                'button_title' => '在合格的节拍图上报告问题。',
+                'link' => '这里',
+            ],
+        ],
+
         'info' => [
-            'no_scores' => 'Unranked 谱面',
-            'success-rate' => '成功率',
+            'description' => '谱面介绍',
+            'genre' => '流派',
+            'language' => '语言',
+            'no_scores' => '数据还在计算中。。。',
             'points-of-failure' => '失败位置',
-
-            'description' => '介绍',
-
             'source' => '来源',
+            'success-rate' => '成功率',
             'tags' => '标签',
+            'unranked' => 'Unranked 谱面',
         ],
+
         'scoreboard' => [
-            'achieved' => '达成于 :when',
+            'achieved' => '在 :when 达成',
             'country' => '国内排名',
             'friend' => '好友排名',
             'global' => '全球排名',
-            'supporter-link' => '点击 <a href=":link">这里</a> 查看你得到的所有特性吧!',
-            'supporter-only' => '你需要成为支持者才能查看国内/好友排名!',
-            'title' => '得分板',
+            'supporter-link' => '点击 <a href=":link">这里</a> 来查看你得到的精彩功能！',
+            'supporter-only' => '你需要成为 osu! 支持者才能查看国内/好友排名！',
+            'title' => '排行榜',
 
-            'list' => [
+            'headers' => [
                 'accuracy' => '准确率',
-                'player-header' => '玩家',
-                'rank-header' => '排名',
+                'combo' => '最大连击',
+                'miss' => 'Miss',
+                'mods' => 'Mod',
+                'player' => '玩家',
+                'pp' => 'pp',
+                'rank' => '排名',
+                'score_total' => '得分',
                 'score' => '得分',
             ],
+
             'no_scores' => [
-                'country' => '国内还没有人在这张谱面上得分!',
-                'friend' => '您的好友中还没有人在这张谱面上得分!',
-                'global' => '还没有人在这张谱面上得分,您或许可以试一试?',
+                'country' => '还没有玩家上传过成绩！',
+                'friend' => '还没有好友上传成绩！',
+                'global' => '还没有玩家上传过成绩，来玩一把？',
                 'loading' => '加载分数中...',
+                'unranked' => 'Unranked 谱面',
             ],
             'score' => [
-                'first' => '领先者',
+                'first' => '领衔者',
                 'own' => '你的最佳成绩',
             ],
-            'stats' => [
-                'accuracy' => '准确率',
-                'score' => '得分',
-            ],
+        ],
+
+        'stats' => [
+            'cs' => '圆圈大小',
+            'cs-mania' => '键位数量',
+            'drain' => '掉血速度',
+            'accuracy' => '准确率',
+            'ar' => '缩圈速度',
+            'stars' => '难度星级',
+            'total_length' => '长度',
+            'bpm' => 'BPM',
+            'count_circles' => '圆圈总数',
+            'count_sliders' => '滑条总数',
+            'user-rating' => '玩家评价',
+            'rating-spread' => '评分情况',
+            'nominations' => '提名状态',
+            'playcount' => '游玩次数',
+        ],
+
+        'status' => [
+            'ranked' => 'Ranked',
+            'approved' => 'Approved',
+            'loved' => 'Loved',
+            'qualified' => 'Qualified',
+            'wip' => 'WIP',
+            'pending' => 'Pending',
+            'graveyard' => 'Graveyard',
         ],
     ],
 ];

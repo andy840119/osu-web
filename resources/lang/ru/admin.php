@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -19,9 +19,16 @@
  */
 
 return [
-
     'beatmapsets' => [
+        'covers' => [
+            'regenerate' => 'Восстановить',
+            'regenerating' => 'Восстановление...',
+            'remove' => 'Удалить',
+            'removing' => 'Удаление...',
+            'title' => 'Обложки наборов карт',
+        ],
         'show' => [
+            'covers' => 'Управление обложками набора карт',
             'discussion' => [
                 '_' => 'Моддинг v2',
                 'activate' => 'включить',
@@ -64,9 +71,8 @@ return [
 
     'pages' => [
         'root' => [
-            'title' => 'Консоль администратора Thingy',
-
             'sections' => [
+                'beatmapsets' => 'Наборы карт',
                 'forum' => 'Форум',
                 'general' => 'Главная',
                 'store' => 'Магазин',
@@ -79,6 +85,13 @@ return [
             'index' => [
                 'title' => 'Список заказов',
             ],
+        ],
+    ],
+
+    'users' => [
+        'restricted_banner' => [
+            'title' => 'В данный момент пользователь ограничен.',
+            'message' => '(это могут видеть только админы)',
         ],
     ],
 

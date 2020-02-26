@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -25,14 +25,14 @@ return [
     'italic' => 'Corsivo',
     'link' => 'Link',
     'list' => 'Lista',
-    'list_numbered' => 'Lista Ordinata',
+    'list_numbered' => 'Lista Numerata',
     'size' => [
-        '_' => 'Dimensioni Font',
+        '_' => 'Dimensione Font',
         'tiny' => 'Minuscolo',
         'small' => 'Piccolo',
         'normal' => 'Normale',
         'large' => 'Grande',
     ],
-    'spoilerbox' => 'Box Spoiler',
-    'strikethrough' => 'Strike', // "Cancellare" would look like delete text instead of strikethrough so i need help on this
+    'spoilerbox' => 'Spoiler Box',
+    'strikethrough' => 'Barrato',
 ];

@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -20,16 +20,21 @@
 
 namespace App\Models\UserStatistics;
 
+use App\Exceptions\ClassNotFoundException;
+use App\Models\Beatmap;
+use App\Models\Model as BaseModel;
+use App\Models\Score\Best;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Model as BaseModel;
 
+/**
+ * @property mixed $country_acronym
+ * @property User $user
+ */
 abstract class Model extends BaseModel
 {
     protected $primaryKey = 'user_id';
 
     public $timestamps = false;
-
-    protected $guarded = [];
 
     const UPDATED_AT = 'last_update';
 
@@ -53,6 +58,11 @@ abstract class Model extends BaseModel
         return presence($value);
     }
 
+    public function getHitAccuracyAttribute($value)
+    {
+        return $this->accuracy_new ?? round($this->accuracy * 100, 2);
+    }
+
     public function currentLevelProgress()
     {
         return fmod($this->level, 1);
@@ -73,33 +83,31 @@ abstract class Model extends BaseModel
         return $this->count300 + $this->count100 + $this->count50;
     }
 
-    public function countryRank()
-    {
-        if ($this->country_acronym === null) {
-            return;
-        }
-
-        // Using $this->rank_score isn't accurate because it's a float value.
-        // Hence the raw sql query.
-        // There's this alternative
-        //   rank_score_index < $this->rank_score_index AND rank_score_index > 0 AND rank_score > 0
-        // but it is slower.
-        return static::where('country_acronym', $this->country_acronym)
-            ->where('rank_score', '>', function ($q) {
-                $q->from($this->table)->where('user_id', $this->user_id)->select('rank_score');
-            })
-            ->count() + 1;
-    }
-
     public static function getClass($modeStr)
     {
-        if ($modeStr === null) {
-            return;
+        if (!Beatmap::isModeValid($modeStr)) {
+            throw new ClassNotFoundException();
         }
 
-        $klass = get_class_namespace(static::class).'\\'.studly_case($modeStr);
+        return get_class_namespace(static::class).'\\'.studly_case($modeStr);
+    }
 
-        return new $klass;
+    public static function getMode(): string
+    {
+        return snake_case(get_class_basename(static::class));
+    }
+
+    public static function recalculateRankedScoreForUser(User $user)
+    {
+        $bestClass = Best\Model::getClassByString(static::getMode());
+
+        $instance = new static;
+        $statsTable = $instance->getTable();
+        $bestTable = (new $bestClass)->getTable();
+
+        $instance->getConnection()->update(
+            "UPDATE {$statsTable} SET accuracy_count = 0, accuracy_total = 0, ranked_score = (SELECT COALESCE(SUM(score), 0) FROM (SELECT MAX(score) AS score FROM {$bestTable} WHERE user_id = {$user->getKey()} GROUP BY beatmap_id) s) WHERE user_id = {$user->getKey()}"
+        );
     }
 
     public function __construct($attributes = [], $zeroInsteadOfNull = true)
@@ -122,10 +130,54 @@ abstract class Model extends BaseModel
             $this->replay_popularity = 0;
 
             $this->x_rank_count = 0;
+            $this->xh_rank_count = 0;
             $this->s_rank_count = 0;
+            $this->sh_rank_count = 0;
             $this->a_rank_count = 0;
+
+            $this->accuracy_total = 0;
+            $this->accuracy_count = 0;
+            $this->accuracy = 0;
+            $this->rank = 0;
+            $this->rank_score = 0;
         }
 
         return parent::__construct($attributes);
+    }
+
+    public function countryRank()
+    {
+        if (!$this->isRanked()) {
+            return;
+        }
+
+        if ($this->country_acronym === null) {
+            return;
+        }
+
+        // Using $this->rank_score isn't accurate because it's a float value.
+        // Hence the raw sql query.
+        // There's this alternative
+        //   rank_score_index < $this->rank_score_index AND rank_score_index > 0 AND rank_score > 0
+        // but it is slower.
+        return static::where('country_acronym', $this->country_acronym)
+            ->where('rank_score', '>', function ($q) {
+                $q->from($this->table)->where('user_id', $this->user_id)->select('rank_score');
+            })
+            ->count() + 1;
+    }
+
+    public function globalRank()
+    {
+        if (!$this->isRanked()) {
+            return;
+        }
+
+        return $this->rank_score_index;
+    }
+
+    public function isRanked()
+    {
+        return $this->rank_score !== 0.0 && $this->rank_score_index !== 0;
     }
 }

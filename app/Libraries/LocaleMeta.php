@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -23,6 +23,26 @@ namespace App\Libraries;
 class LocaleMeta
 {
     const MAPPINGS = [
+        'ar' => [
+            'name' => 'اَلْعَرَبِيَّةُ‎',
+            'flag' => 'SA',
+        ],
+        'be' => [
+            'name' => 'Беларуская мова',
+            'flag' => 'BY',
+        ],
+        'bg' => [
+            'name' => 'Български',
+            'flag' => 'BG',
+        ],
+        'cs' => [
+            'name' => 'Česky',
+            'flag' => 'CZ',
+        ],
+        'da' => [
+            'name' => 'Dansk',
+            'flag' => 'DK',
+        ],
         'de' => [
             'name' => 'Deutsch',
             'flag' => 'DE',
@@ -65,7 +85,7 @@ class LocaleMeta
         ],
         'ko' => [
             'name' => '한국어',
-            'flag' => 'KO',
+            'flag' => 'KR',
         ],
         'nl' => [
             'name' => 'Nederlands',
@@ -87,9 +107,21 @@ class LocaleMeta
             'name' => 'Português (Brasil)',
             'flag' => 'BR',
         ],
+        'ro' => [
+            'name' => 'Română',
+            'flag' => 'RO',
+        ],
         'ru' => [
             'name' => 'Русский',
             'flag' => 'RU',
+        ],
+        'sk' => [
+            'name' => 'Slovenčina',
+            'flag' => 'SK',
+        ],
+        'sv' => [
+            'name' => 'Svenska',
+            'flag' => 'SE',
         ],
         'th' => [
             'name' => 'ไทย',
@@ -99,27 +131,57 @@ class LocaleMeta
             'name' => 'Tagalog',
             'flag' => 'PH',
         ],
+        'tr' => [
+            'name' => 'Türkçe',
+            'flag' => 'TR',
+        ],
+        'uk' => [
+            'name' => 'українська мова',
+            'flag' => 'UA',
+        ],
+        'vi' => [
+            'name' => 'Tiếng Việt',
+            'flag' => 'VN',
+        ],
         'zh' => [
-            'name' => '中文',
+            'name' => '简体中文',
             'flag' => 'CN',
         ],
         'zh-hk' => [
-            'name' => '粤语',
+            'name' => '繁體中文（香港）',
             'flag' => 'HK',
         ],
         'zh-tw' => [
-            'name' => '繁體中文',
+            'name' => '繁體中文（台灣）',
             'flag' => 'TW',
         ],
     ];
 
+    const UNKNOWN = [
+        'name' => '??',
+        'flag' => '__',
+    ];
+
+    // doesn't actually return instance of this class :D
+    public static function find($locale)
+    {
+        return static::MAPPINGS[static::sanitizeCode($locale)] ?? static::UNKNOWN;
+    }
+
     public static function flagFor($locale)
     {
-        return static::MAPPINGS[strtolower($locale)]['flag'] ?? '__';
+        return static::find($locale)['flag'];
     }
 
     public static function nameFor($locale)
     {
-        return static::MAPPINGS[strtolower($locale)]['name'] ?? '??';
+        return static::find($locale)['name'];
+    }
+
+    public static function sanitizeCode($locale)
+    {
+        $ret = strtolower($locale);
+
+        return isset(static::MAPPINGS[$ret]) ? $ret : null;
     }
 }

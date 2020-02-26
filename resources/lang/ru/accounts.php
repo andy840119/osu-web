@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -20,63 +20,104 @@
 
 return [
     'edit' => [
-        'title' => 'Настройки <strong>профиля</strong>',
         'title_compact' => 'настройки',
+        'username' => 'имя пользователя',
 
         'avatar' => [
             'title' => 'Аватар',
+            'rules' => 'Пожалуйста, убедитесь, что ваш аватар придерживается :link.<br/>Это значит, что он должен <strong>подходить для всех возрастов</strong>, т.е.: никакой наготы, ругательств или вызывающего контента.',
+            'rules_link' => 'правил сообщества',
         ],
 
         'email' => [
-            'current' => 'текущий email',
-            'new' => 'новый email',
-            'new_confirmation' => 'повтори email',
-            'title' => 'Email',
+            'current' => 'текущая почта',
+            'new' => 'новая почта',
+            'new_confirmation' => 'повторите почту',
+            'title' => 'Смена почты',
         ],
 
         'password' => [
             'current' => 'текущий пароль',
             'new' => 'новый пароль',
-            'new_confirmation' => 'повтори пароль',
-            'title' => 'Пароль',
+            'new_confirmation' => 'повторите пароль',
+            'title' => 'Смена пароля',
         ],
 
         'profile' => [
-            'title' => 'Основная информация',
+            'title' => 'Профиль',
 
             'user' => [
-                'user_from' => 'проживание',
+                'user_discord' => 'discord',
+                'user_from' => 'место проживания',
                 'user_interests' => 'интересы',
-                'user_msnm' => 'скайп',
-                'user_occ' => 'профессия',
-                'user_twitter' => 'твиттер',
+                'user_msnm' => 'skype',
+                'user_occ' => 'род деятельности',
+                'user_twitter' => 'twitter',
                 'user_website' => 'веб-сайт',
             ],
         ],
 
         'signature' => [
-            'title' => 'Подпись',
-            'update' => 'обновить',
+            'title' => 'Подпись на форуме',
+            'update' => 'сохранить',
         ],
     ],
 
-    'update_email' => [
-        'email_subject' => 'osu! подтверждение смены почты',
-        'update' => 'изменить',
-        'updated' => 'Почта изменена',
+    'notifications' => [
+        'title' => 'Уведомления',
+        'topic_auto_subscribe' => 'отслеживать созданные темы автоматически',
+        'beatmapset_discussion_qualified_problem' => 'получать уведомления о новых проблемах с квалифицированными картами у следующих режимов',
+
+        'mail' => [
+            '_' => 'получать уведомления по почте о',
+            'beatmapset:modding' => 'моддинге карт',
+            'forum_topic_reply' => 'ответах на темы',
+        ],
     ],
 
-    'update_password' => [
-        'email_subject' => 'osu! подтверждение нового пароля',
-        'update' => 'изменить',
-        'updated' => 'Пароль изменён',
+    'oauth' => [
+        'authorized_clients' => 'подключенные',
+        'own_clients' => 'мои клиенты',
+        'title' => 'Приложения и доступ',
     ],
 
     'playstyles' => [
-        'title' => 'Стиль игры',
-        'mouse' => 'на мышке',
-        'keyboard' => 'на клавиатуре',
-        'tablet' => 'на планшете',
-        'touch' => 'на сенсорном экране',
+        'keyboard' => 'клавиатура',
+        'mouse' => 'мышь',
+        'tablet' => 'графический планшет',
+        'title' => 'Устройства',
+        'touch' => 'сенсорный экран',
+    ],
+
+    'privacy' => [
+        'friends_only' => 'разрешить писать мне только друзьям',
+        'hide_online' => 'скрывать онлайн на сайте',
+        'title' => 'Конфиденциальность',
+    ],
+
+    'security' => [
+        'current_session' => 'текущая',
+        'end_session' => 'деавторизовать',
+        'end_session_confirmation' => 'Сеанс на этом устройстве будет немедленно завершён. Вы уверены?',
+        'last_active' => 'Был активен:',
+        'title' => 'Безопасность',
+        'web_sessions' => 'последняя активность',
+    ],
+
+    'update_email' => [
+        'update' => 'сменить',
+    ],
+
+    'update_password' => [
+        'update' => 'сменить',
+    ],
+
+    'verification_completed' => [
+        'text' => 'Теперь вы можете закрыть эту вкладку/окно',
+        'title' => 'Проверка завершена',
+    ],
+
+    'verification_invalid' => [
+        'title' => 'Неверная или устаревшая ссылка для подтверждения',
     ],
 ];

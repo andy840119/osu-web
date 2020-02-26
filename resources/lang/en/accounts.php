@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -20,11 +20,13 @@
 
 return [
     'edit' => [
-        'title' => '<strong>Account</strong> Settings',
-        'title_compact' => 'settings',
+        'title_compact' => 'account settings',
+        'username' => 'username',
 
         'avatar' => [
-            'title' => 'Edit Avatar',
+            'title' => 'Avatar',
+            'rules' => 'Please ensure your avatar adheres to :link.<br/>This means it must be <strong>suitable for all ages</strong>. i.e. no nudity, profanity or suggestive content.',
+            'rules_link' => 'the community rules',
         ],
 
         'email' => [
@@ -42,11 +44,12 @@ return [
         ],
 
         'profile' => [
-            'title' => 'Edit Profile',
+            'title' => 'Profile',
 
             'user' => [
+                'user_discord' => 'discord',
                 'user_from' => 'current location',
-                'user_interests' => 'interest',
+                'user_interests' => 'interests',
                 'user_msnm' => 'skype',
                 'user_occ' => 'occupation',
                 'user_twitter' => 'twitter',
@@ -60,23 +63,61 @@ return [
         ],
     ],
 
-    'update_email' => [
-        'email_subject' => 'osu! email change confirmation',
-        'update' => 'update',
-        'updated' => 'Email updated',
+    'notifications' => [
+        'title' => 'Notifications',
+        'topic_auto_subscribe' => 'automatically enable notifications on new forum topics that you create',
+        'beatmapset_discussion_qualified_problem' => 'receive notifications for new problem on qualified beatmaps of following modes',
+
+        'mail' => [
+            '_' => 'receive mail notifications for',
+            'beatmapset:modding' => 'beatmap modding',
+            'forum_topic_reply' => 'topic reply',
+        ],
     ],
 
-    'update_password' => [
-        'email_subject' => 'osu! password change confirmation',
-        'update' => 'update',
-        'updated' => 'Password updated',
+    'oauth' => [
+        'authorized_clients' => 'authorized clients',
+        'own_clients' => 'own clients',
+        'title' => 'OAuth',
     ],
 
     'playstyles' => [
-        'title' => 'Playstyles',
-        'mouse' => 'mouse',
         'keyboard' => 'keyboard',
+        'mouse' => 'mouse',
         'tablet' => 'tablet',
+        'title' => 'Playstyles',
         'touch' => 'touch',
+    ],
+
+    'privacy' => [
+        'friends_only' => 'block private messages from people not on your friends list',
+        'hide_online' => 'hide your online presence',
+        'title' => 'Privacy',
+    ],
+
+    'security' => [
+        'current_session' => 'current',
+        'end_session' => 'End Session',
+        'end_session_confirmation' => 'This will immediately end your session on that device. Are you sure?',
+        'last_active' => 'Last active:',
+        'title' => 'Security',
+        'web_sessions' => 'web sessions',
+    ],
+
+    'update_email' => [
+        'update' => 'update',
+    ],
+
+    'update_password' => [
+        'update' => 'update',
+    ],
+
+    'verification_completed' => [
+        'text' => 'You can close this tab/window now',
+        'title' => 'Verification has been completed',
+    ],
+
+    'verification_invalid' => [
+        'title' => 'Invalid or expired verification link',
     ],
 ];

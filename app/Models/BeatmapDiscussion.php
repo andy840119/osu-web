@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -20,37 +20,171 @@
 
 namespace App\Models;
 
+use App\Jobs\RefreshBeatmapsetUserKudosu;
+use App\Traits\Validatable;
+use Cache;
 use Carbon\Carbon;
 use DB;
+use Exception;
 
+/**
+ * @property \Illuminate\Database\Eloquent\Collection $beatmapDiscussionPosts BeatmapDiscussionPost
+ * @property \Illuminate\Database\Eloquent\Collection $beatmapDiscussionVotes BeatmapDiscussionVote
+ * @property int|null $beatmap_id
+ * @property int $beatmapset_id
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $deleted_at
+ * @property int|null $deleted_by_id
+ * @property int $id
+ * @property KudosuHistory $kudosuHistory
+ * @property bool $kudosu_denied
+ * @property int|null $kudosu_denied_by_id
+ * @property int|null $message_type
+ * @property bool $resolved
+ * @property int|null $resolver_id
+ * @property BeatmapDiscussionPost $startingPost
+ * @property int|null $timestamp
+ * @property \Carbon\Carbon|null $updated_at
+ * @property User $user
+ * @property int|null $user_id
+ * @property Beatmap $visibleBeatmap
+ * @property Beatmapset $visibleBeatmapset
+ */
 class BeatmapDiscussion extends Model
 {
-    protected $guarded = [];
-
-    protected $touches = ['beatmapsetDiscussion'];
+    use Validatable;
 
     protected $casts = [
+        'kudosu_denied' => 'boolean',
         'resolved' => 'boolean',
     ];
 
-    protected $dates = ['deleted_at'];
+    protected $dates = ['deleted_at', 'last_post_at'];
 
-    const KUDOSU_STEPS = [5, 10, 15];
+    const KUDOSU_STEPS = [1, 2, 5];
 
     const MESSAGE_TYPES = [
-        'praise' => 0,
         'suggestion' => 1,
         'problem' => 2,
+        'mapper_note' => 3,
+        'praise' => 0,
+        'hype' => 4,
+        'review' => 5,
     ];
 
+    const RESOLVABLE_TYPES = [1, 2];
+    const KUDOSUABLE_TYPES = [1, 2];
+
+    const VALID_BEATMAPSET_STATUSES = ['ranked', 'qualified', 'disqualified', 'never_qualified'];
+    const VOTES_TO_SHOW = 50;
+
+    public static function search($rawParams = [])
+    {
+        $params = [
+            'limit' => clamp(get_int($rawParams['limit'] ?? null) ?? 20, 5, 50),
+            'page' => max(get_int($rawParams['page'] ?? null) ?? 1, 1),
+        ];
+
+        $query = static::limit($params['limit'])->offset(($params['page'] - 1) * $params['limit']);
+
+        if (present($rawParams['user'] ?? null)) {
+            $params['user'] = $rawParams['user'];
+            $user = User::lookup($params['user']);
+
+            if ($user === null) {
+                $query->none();
+            } else {
+                $query->where('user_id', '=', $user->getKey());
+            }
+        } else {
+            $params['user'] = null;
+        }
+
+        if (isset($rawParams['sort'])) {
+            $sort = explode('-', strtolower($rawParams['sort']));
+
+            if (in_array($sort[0] ?? null, ['id'], true)) {
+                $sortField = $sort[0];
+            }
+
+            if (in_array($sort[1] ?? null, ['asc', 'desc'], true)) {
+                $sortOrder = $sort[1];
+            }
+        }
+
+        $sortField ?? ($sortField = 'id');
+        $sortOrder ?? ($sortOrder = 'desc');
+
+        $params['sort'] = "{$sortField}-{$sortOrder}";
+        $query->orderBy($sortField, $sortOrder);
+
+        if (isset($rawParams['message_types'])) {
+            $params['message_types'] = get_arr($rawParams['message_types'], 'get_string');
+
+            $query->ofType($params['message_types']);
+        } else {
+            $params['message_types'] = array_keys(static::MESSAGE_TYPES);
+        }
+
+        $params['beatmapset_status'] = static::getValidBeatmapsetStatus($rawParams['beatmapset_status'] ?? null);
+        if ($params['beatmapset_status']) {
+            $query->whereHas('beatmapset', function ($beatmapsetQuery) use ($params) {
+                $scope = camel_case($params['beatmapset_status']);
+                $beatmapsetQuery->$scope();
+            });
+        }
+
+        $params['only_unresolved'] = get_bool($rawParams['only_unresolved'] ?? null) ?? false;
+
+        if ($params['only_unresolved']) {
+            $query->openIssues();
+        }
+
+        $params['with_deleted'] = get_bool($rawParams['with_deleted'] ?? null) ?? false;
+
+        if (!$params['with_deleted']) {
+            $query->withoutTrashed();
+        }
+
+        if (!($rawParams['is_moderator'] ?? false)) {
+            $query->whereHas('user', function ($userQuery) {
+                $userQuery->default();
+            });
+        }
+
+        // TODO: remove this when reviews are released
+        if (!config('osu.beatmapset.discussion_review_enabled')) {
+            $query->hideReviews();
+        }
+
+        return ['query' => $query, 'params' => $params];
+    }
+
+    private static function getValidBeatmapsetStatus($rawParam)
+    {
+        if (in_array($rawParam, static::VALID_BEATMAPSET_STATUSES, true)) {
+            return $rawParam;
+        }
+    }
+
     public function beatmap()
+    {
+        return $this->visibleBeatmap()->withTrashed();
+    }
+
+    public function visibleBeatmap()
     {
         return $this->belongsTo(Beatmap::class, 'beatmap_id');
     }
 
     public function beatmapset()
     {
-        return $this->beatmap->beatmapset();
+        return $this->visibleBeatmapset()->withTrashed();
+    }
+
+    public function visibleBeatmapset()
+    {
+        return $this->belongsTo(Beatmapset::class, 'beatmapset_id');
     }
 
     public function beatmapDiscussionPosts()
@@ -58,19 +192,31 @@ class BeatmapDiscussion extends Model
         return $this->hasMany(BeatmapDiscussionPost::class);
     }
 
+    public function startingPost()
+    {
+        return $this->hasOne(BeatmapDiscussionPost::class)->whereNotExists(function ($query) {
+            $table = (new BeatmapDiscussionPost)->getTable();
+
+            $query->selectRaw(1)
+                ->from(DB::raw("{$table} d"))
+                ->where('beatmap_discussion_id', $this->beatmap_discussion_id)
+                ->whereRaw("d.id < {$table}.id");
+        });
+    }
+
     public function beatmapDiscussionVotes()
     {
         return $this->hasMany(BeatmapDiscussionVote::class);
     }
 
-    public function beatmapsetDiscussion()
-    {
-        return $this->belongsTo(BeatmapsetDiscussion::class);
-    }
-
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function kudosuHistory()
+    {
+        return $this->morphMany(KudosuHistory::class, 'kudosuable');
     }
 
     public function getMessageTypeAttribute($value)
@@ -80,139 +226,360 @@ class BeatmapDiscussion extends Model
 
     public function setMessageTypeAttribute($value)
     {
+        // TODO: remove this when reviews are released
+        if (!config('osu.beatmapset.discussion_review_enabled') && $value === 'review') {
+            return $this->attributes['message_type'] = null;
+        }
+
         return $this->attributes['message_type'] = static::MESSAGE_TYPES[$value] ?? null;
     }
 
-    public function refreshKudosu($event)
+    public function getResolvedAttribute($value)
     {
-        // no kudosu for praises...?
-        if ($this->message_type === 'praise') {
-            return;
+        return $this->canBeResolved() ? (bool) $value : false;
+    }
+
+    public function setResolvedAttribute($value)
+    {
+        if (!$this->canBeResolved()) {
+            $value = false;
         }
 
-        // cleanup of own votes
+        $this->attributes['resolved'] = $value;
+    }
+
+    public function canBeResolved()
+    {
+        return in_array($this->attributes['message_type'] ?? null, static::RESOLVABLE_TYPES, true);
+    }
+
+    public function canGrantKudosu()
+    {
+        return
+            in_array($this->attributes['message_type'] ?? null, static::KUDOSUABLE_TYPES, true) &&
+            $this->user_id !== $this->beatmapset->user_id &&
+            !$this->trashed() &&
+            !$this->kudosu_denied;
+    }
+
+    public function refreshKudosu($event, $eventExtraData = [])
+    {
+        // remove own votes
         $this->beatmapDiscussionVotes()->where([
             'user_id' => $this->user_id,
         ])->delete();
 
         // inb4 timing problem
-        $currentVotes = $this->currentVotes();
-        $previousVotes = $this->kudosu_refresh_votes ?? 0;
-        $votesChange = $currentVotes - $previousVotes;
+        $currentVotes = $this->canGrantKudosu() ?
+            (int) $this->beatmapDiscussionVotes()->sum('score') :
+            0;
+        $kudosuGranted = (int) $this->kudosuHistory()->sum('amount');
+        $targetKudosu = 0;
 
-        $change = 0;
-
-        if ($votesChange > 0) {
-            foreach (static::KUDOSU_STEPS as $step) {
-                if ($previousVotes < $step && $currentVotes >= $step) {
-                    $change += 1;
-                }
-            }
-        } else {
-            foreach (static::KUDOSU_STEPS as $step) {
-                if ($currentVotes < $step && $previousVotes >= $step) {
-                    $change -= 1;
-                }
+        foreach (static::KUDOSU_STEPS as $step) {
+            if ($currentVotes >= $step) {
+                $targetKudosu++;
+            } else {
+                break;
             }
         }
+
+        $beatmapsetKudosuGranted = (int) KudosuHistory
+            ::where('kudosuable_type', $this->getMorphClass())
+            ->whereIn('kudosuable_id',
+                static
+                    ::where('kudosu_denied', '=', false)
+                    ->where('beatmapset_id', '=', $this->beatmapset_id)
+                    ->where('user_id', '=', $this->user_id)
+                    ->select('id')
+            )->sum('amount');
+
+        $availableKudosu = config('osu.beatmapset.discussion_kudosu_per_user') - $beatmapsetKudosuGranted;
+        $maxChange = $targetKudosu - $kudosuGranted;
+        $change = min($availableKudosu, $maxChange);
 
         if ($change === 0) {
             return;
         }
 
-        DB::transaction(function () use ($change, $event, $currentVotes) {
+        // This should only happen when the rule is changed so always assume recalculation.
+        if (abs($change) > 1) {
+            $event = 'recalculate';
+        }
+
+        DB::transaction(function () use ($change, $event, $eventExtraData, $currentVotes) {
+            if ($event === 'vote') {
+                if ($change > 0) {
+                    $beatmapsetEventType = BeatmapsetEvent::KUDOSU_GAIN;
+                } else {
+                    $beatmapsetEventType = BeatmapsetEvent::KUDOSU_LOST;
+                }
+
+                $eventExtraData['votes'] = $this
+                    ->beatmapDiscussionVotes
+                    ->map
+                    ->forEvent();
+            } elseif ($event === 'recalculate') {
+                $beatmapsetEventType = BeatmapsetEvent::KUDOSU_RECALCULATE;
+            }
+
+            if (isset($beatmapsetEventType)) {
+                BeatmapsetEvent::log($beatmapsetEventType, $this->user, $this, $eventExtraData)->saveOrExplode();
+            }
+
             KudosuHistory::create([
                 'receiver_id' => $this->user->user_id,
                 'amount' => $change,
                 'action' => $change > 0 ? 'give' : 'reset',
                 'date' => Carbon::now(),
-                'kudosuable_type' => static::class,
+                'kudosuable_type' => $this->getMorphClass(),
                 'kudosuable_id' => $this->id,
                 'details' => [
                     'event' => $event,
                 ],
             ]);
-            $this->update([
-                'kudosu_refresh_votes' => $currentVotes,
-            ]);
+
             $this->user->update([
                 'osu_kudostotal' => DB::raw("osu_kudostotal + {$change}"),
                 'osu_kudosavailable' => DB::raw("osu_kudosavailable + {$change}"),
             ]);
         });
+
+        // When user lost kudosu, check if there's extra kudosu available.
+        if ($event !== 'recalculate' && $change < 0) {
+            dispatch(new RefreshBeatmapsetUserKudosu(['beatmapsetId' => $this->beatmapset_id, 'userId' => $this->user_id]));
+        }
     }
 
-    public function currentVotes()
+    public function refreshResolved()
     {
-        return ($this->isDeleted() || $this->kudosu_denied)
-            ? 0
-            : $this->beatmapDiscussionVotes()->sum('score');
+        $systemPosts = $this
+            ->beatmapDiscussionPosts()
+            ->withoutTrashed()
+            ->where('system', '=', true)
+            ->orderBy('id', 'DESC')
+            ->get();
+
+        foreach ($systemPosts as $post) {
+            if ($post->message['type'] === 'resolved') {
+                return $this->update(['resolved' => $post->message['value']]);
+            }
+        }
+
+        return $this->update(['resolved' => false]);
     }
 
-    public function hasValidBeatmap()
+    public function refreshTimestampOrExplode()
     {
-        return
-            $this->beatmap_id === null ||
-            ($this->beatmap && $this->beatmap->beatmapset_id === $this->beatmapsetDiscussion->beatmapset_id);
+        if ($this->timestamp === null) {
+            return;
+        }
+
+        if ($this->startingPost === null) {
+            return;
+        }
+
+        return $this->fill([
+            'timestamp' => $this->startingPost->timestamp() ?? null,
+        ])->saveOrExplode();
     }
 
-    public function hasValidMessageType()
+    public function fixBeatmapsetId()
     {
-        // either has no message type (a general message) or attached to a beatmap
-        return
-            $this->message_type === null || $this->beatmap_id !== null;
+        if (!$this->isDirty('beatmap_id') || $this->beatmap === null) {
+            return;
+        }
+
+        $this->beatmapset_id = $this->beatmap->beatmapset_id;
     }
 
-    public function hasValidTimestamp()
+    public function validateLockStatus()
     {
-        return
-            ($this->timestamp === null) ||
-            ($this->beatmap_id !== null && $this->timestamp >= 0 && $this->timestamp < ($this->beatmap->total_length * 1000));
+        static $modifiableWhenLocked = [
+            'deleted_at',
+            'deleted_by_id',
+            'kudosu_denied',
+            'kudosu_denied_by_id',
+        ];
+
+        if ($this->exists &&
+            count(array_diff(array_keys($this->getDirty()), $modifiableWhenLocked)) > 0 &&
+            $this->isLocked()
+        ) {
+            $this->validationErrors()->add('base', '.locked');
+        }
+    }
+
+    public function validateMessageType()
+    {
+        if ($this->message_type === null) {
+            return $this->validationErrors()->add('message_type', 'required');
+        }
+
+        if (!$this->isDirty('message_type')) {
+            return;
+        }
+
+        if ($this->message_type === 'hype') {
+            if ($this->beatmap_id !== null) {
+                $this->validationErrors()->add('message_type', '.hype_requires_null_beatmap');
+            }
+
+            if (!$this->beatmapset->canBeHyped()) {
+                $this->validationErrors()->add('message_type', '.beatmapset_no_hype');
+            }
+
+            $beatmapsetHypeValidate = $this->beatmapset->validateHypeBy($this->user);
+
+            if (!$beatmapsetHypeValidate['result']) {
+                $this->validationErrors()->addTranslated('base', $beatmapsetHypeValidate['message']);
+            }
+        }
+    }
+
+    public function validateParents()
+    {
+        if ($this->beatmap_id !== null && $this->beatmap === null) {
+            $this->validationErrors()->add('beatmap_id', '.invalid_beatmap_id');
+        }
+
+        if ($this->beatmapset_id === null) {
+            $this->validationErrors()->add('beatmapset_id', 'required');
+        } elseif ($this->beatmapset === null) {
+            $this->validationErrors()->add('beatmap_id', '.invalid_beatmapset_id');
+        }
+    }
+
+    public function validateTimestamp()
+    {
+        // skip validation if not changed
+        if (!$this->isDirty('timestamp')) {
+            return;
+        }
+
+        // skip validation if changed timestamp from null to null
+        if ($this->getOriginal('timestamp') === null && $this->timestamp === null) {
+            return;
+        }
+
+        if ($this->beatmap === null) {
+            return $this->validationErrors()->add('beatmap_id', '.beatmap_missing');
+        }
+
+        if ($this->timestamp === null) {
+            $this->validationErrors()->add('timestamp', 'required');
+        }
+
+        if ($this->timestamp < 0) {
+            $this->validationErrors()->add('timestamp', '.timestamp.negative');
+        }
+
+        // FIXME: total_length is only for existing hit objects.
+        // FIXME: The chart in discussion page will need to account this as well.
+        if ($this->timestamp > ($this->beatmap->total_length + 10) * 1000) {
+            $this->validationErrors()->add('timestamp', '.timestamp.exceeds_beatmapset_length');
+        }
+    }
+
+    public function isValid()
+    {
+        $this->validationErrors()->reset();
+
+        $this->validateLockStatus();
+        $this->validateParents();
+        $this->validateMessageType();
+        $this->validateTimestamp();
+
+        return $this->validationErrors()->isEmpty();
+    }
+
+    public function validationErrorsTranslationPrefix()
+    {
+        return 'beatmapset_discussion';
+    }
+
+    /*
+     * Also applies to:
+     * - voting
+     * - saving posts (editing, creating)
+     */
+    public function isLocked()
+    {
+        if ($this->trashed()) {
+            return true;
+        }
+
+        if ($this->beatmapset !== null) {
+            if ($this->beatmapset->trashed()) {
+                return true;
+            }
+        }
+
+        if ($this->beatmap_id !== null) {
+            if ($this->beatmap === null || $this->beatmap->trashed()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function votesSummary()
     {
-        $votes = ['up' => 0, 'down' => 0];
+        $votes = [
+            'up' => 0,
+            'down' => 0,
+            'voters' => [
+                'up' => [],
+                'down' => [],
+            ],
+        ];
 
-        foreach ($this->beatmapDiscussionVotes as $vote) {
-            if ($vote->score === 1) {
-                $votes['up'] += 1;
-            } elseif ($vote->score === -1) {
-                $votes['down'] += 1;
+        foreach ($this->beatmapDiscussionVotes->sortByDesc('created_at') as $vote) {
+            if ($vote->score === 0) {
+                continue;
             }
+
+            $direction = $vote->score > 0 ? 'up' : 'down';
+
+            if ($votes[$direction] < static::VOTES_TO_SHOW) {
+                $votes['voters'][$direction][] = $vote->user_id;
+            }
+            $votes[$direction] += 1;
         }
 
         return $votes;
     }
 
-    /*
-     * Called before saving. The callback definition is located in
-     * App\Providers\AppServiceProvider. Don't ask me why it's there;
-     * ask Laravel.
-     */
-    public function isValid()
-    {
-        return $this->hasValidBeatmap() &&
-            $this->hasValidMessageType() &&
-            $this->hasValidTimestamp();
-    }
-
     public function vote($params)
     {
+        if ($this->isLocked()) {
+            return false;
+        }
+
         return DB::transaction(function () use ($params) {
             $vote = $this->beatmapDiscussionVotes()->where(['user_id' => $params['user_id']])->firstOrNew([]);
             $previousScore = $vote->score ?? 0;
             $vote->fill($params);
-            $scoreChange = $vote->score - $previousScore;
 
-            if ($scoreChange !== 0) {
+            if ($previousScore !== $vote->score) {
                 if ($vote->score === 0) {
                     $vote->delete();
                 } else {
-                    $vote->save();
+                    try {
+                        $vote->save();
+                    } catch (Exception $e) {
+                        if (is_sql_unique_exception($e)) {
+                            // abort and pretend it's saved correctly
+                            return true;
+                        }
+
+                        throw $e;
+                    }
                 }
 
-                $this->refreshKudosu('vote');
+                $this->userRecentVotesCount($vote->user, true);
+                $this->refreshKudosu('vote', ['new_vote' => $vote->forEvent()]);
             }
 
             return true;
@@ -221,11 +588,17 @@ class BeatmapDiscussion extends Model
 
     public function title()
     {
-        if ($this->beatmap === null) {
-            return '[deleted beatmap]';
+        if ($this->beatmapset !== null) {
+            if ($this->beatmap_id === null) {
+                return $this->beatmapset->title;
+            }
+
+            if ($this->beatmap !== null) {
+                return "{$this->beatmapset->title} [{$this->beatmap->version}]";
+            }
         }
 
-        return "{$this->beatmapset->title} [{$this->beatmap->version}]";
+        return '[deleted beatmap]';
     }
 
     public function url()
@@ -233,10 +606,11 @@ class BeatmapDiscussion extends Model
         return route('beatmap-discussions.show', $this->id);
     }
 
-    public function allowKudosu()
+    public function allowKudosu($allowedBy)
     {
-        DB::transaction(function () {
-            $this->update(['kudosu_denied' => false]);
+        DB::transaction(function () use ($allowedBy) {
+            BeatmapsetEvent::log(BeatmapsetEvent::KUDOSU_ALLOW, $allowedBy, $this)->saveOrExplode();
+            $this->fill(['kudosu_denied' => false])->saveOrExplode();
             $this->refreshKudosu('allow_kudosu');
         });
     }
@@ -244,40 +618,125 @@ class BeatmapDiscussion extends Model
     public function denyKudosu($deniedBy)
     {
         DB::transaction(function () use ($deniedBy) {
-            $this->update([
+            BeatmapsetEvent::log(BeatmapsetEvent::KUDOSU_DENY, $deniedBy, $this)->saveOrExplode();
+            $this->fill([
                 'kudosu_denied_by_id' => $deniedBy->user_id ?? null,
                 'kudosu_denied' => true,
-            ]);
+            ])->saveOrExplode();
             $this->refreshKudosu('deny_kudosu');
         });
     }
 
-    public function isDeleted()
+    public function userRecentVotesCount($user, $increment = false)
     {
-        return $this->deleted_at !== null;
+        $key = "beatmapDiscussion:{$this->getKey()}:votes:{$user->getKey()}";
+
+        if ($increment) {
+            Cache::add($key, 0, 3600);
+
+            return Cache::increment($key);
+        } else {
+            return get_int(Cache::get($key)) ?? 0;
+        }
     }
 
-    public function restore()
+    public function restore($restoredBy)
     {
-        DB::transaction(function () {
+        DB::transaction(function () use ($restoredBy) {
+            if ($restoredBy->getKey() !== $this->user_id) {
+                BeatmapsetEvent::log(BeatmapsetEvent::DISCUSSION_RESTORE, $restoredBy, $this)->saveOrExplode();
+            }
+
             $this->update(['deleted_at' => null]);
             $this->refreshKudosu('restore');
         });
     }
 
-    public function softDelete($deletedBy)
+    public function save(array $options = [])
+    {
+        $this->fixBeatmapsetId();
+
+        if (!$this->isValid()) {
+            return false;
+        }
+
+        $ret = parent::save($options);
+        $this->beatmapset->refreshCache();
+
+        return $ret;
+    }
+
+    public function softDeleteOrExplode($deletedBy)
     {
         DB::transaction(function () use ($deletedBy) {
-            $this->update([
+            if ($deletedBy->getKey() !== $this->user_id) {
+                BeatmapsetEvent::log(BeatmapsetEvent::DISCUSSION_DELETE, $deletedBy, $this)->saveOrExplode();
+            }
+
+            $this->fill([
                 'deleted_by_id' => $deletedBy->user_id ?? null,
                 'deleted_at' => Carbon::now(),
-            ]);
+            ])->saveOrExplode();
             $this->refreshKudosu('delete');
         });
     }
 
-    public function scopeWithoutDeleted($query)
+    public function trashed()
     {
-        $query->whereNull('deleted_at');
+        return $this->deleted_at !== null;
+    }
+
+    public function scopeOfType($query, $types)
+    {
+        foreach ((array) $types as $type) {
+            $intType = static::MESSAGE_TYPES[$type] ?? null;
+
+            if ($intType !== null) {
+                $intTypes[] = $intType;
+            }
+        }
+
+        return $query->whereIn('message_type', $intTypes ?? []);
+    }
+
+    public function scopeOpenIssues($query)
+    {
+        return $query
+            ->withoutTrashed()
+            ->whereIn('message_type', static::RESOLVABLE_TYPES)
+            ->where(function ($query) {
+                $query
+                    ->has('visibleBeatmap')
+                    ->orWhereNull('beatmap_id');
+            })
+            ->where('resolved', '=', false);
+    }
+
+    public function scopeWithoutTrashed($query)
+    {
+        return $query->whereNull('deleted_at');
+    }
+
+    public function scopeVisible($query)
+    {
+        return $query->visibleWithTrashed()
+            ->withoutTrashed();
+    }
+
+    // TODO: remove this when reviews are released
+    public function scopeHideReviews($query)
+    {
+        if (!config('osu.beatmapset.discussion_review_enabled')) {
+            return $query->where('message_type', '<>', static::MESSAGE_TYPES['review']);
+        }
+    }
+
+    public function scopeVisibleWithTrashed($query)
+    {
+        return $query->whereHas('visibleBeatmapset')
+            ->where(function ($q) {
+                $q->whereNull('beatmap_id')
+                    ->orWhereHas('visibleBeatmap');
+            });
     }
 }

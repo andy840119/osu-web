@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -20,13 +20,27 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use DB;
+use Log;
 
+/**
+ * FIXME: should validate donation is a positive value on save.
+ *
+ * @property int $amount
+ * @property bool $cancel
+ * @property int $length
+ * @property int $target_user_id
+ * @property \Carbon\Carbon $timestamp
+ * @property string $transaction_id
+ * @property int $user_id
+ */
 class UserDonation extends Model
 {
     protected $table = 'osu_user_donations';
 
     protected $dates = ['timestamp'];
+
     public $timestamps = false;
 
     protected $casts = [
@@ -51,5 +65,24 @@ class UserDonation extends Model
         }
 
         return $totalLength;
+    }
+
+    public function cancel($cancelledTransactionId)
+    {
+        if ($this->cancel) {
+            Log::warning("UserDonation({$this->getKey()}) Calling cancel on a cancelled donation");
+
+            return;
+        }
+
+        $donation = $this->replicate();
+        $donation->transaction_id = $cancelledTransactionId;
+        $donation->amount = -$donation->amount;
+        $donation->cancel = true;
+        $donation->timestamp = Carbon::now();
+
+        Log::debug($donation);
+
+        $donation->saveOrExplode();
     }
 }

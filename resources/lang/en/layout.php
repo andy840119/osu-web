@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -23,35 +23,152 @@ return [
         'page_description' => 'osu! - Rhythm is just a *click* away!  With Ouendan/EBA, Taiko and original gameplay modes, as well as a fully functional level editor.',
     ],
 
+    'header' => [
+        'admin' => [
+            '_' => 'admin',
+            'beatmapset' => 'beatmapset',
+            'beatmapset_covers' => 'beatmapset covers',
+            'contest' => 'contest',
+            'contests' => 'contests',
+            'root' => 'console',
+            'store_orders' => 'store admin',
+        ],
+
+        'artists' => [
+            '_' => 'featured artists',
+            'index' => 'listing',
+        ],
+
+        'beatmapsets' => [
+            '_' => 'beatmap',
+            'discussions' => 'discussion',
+            'index' => 'listing',
+            'show' => 'info',
+            'packs' => 'packs',
+        ],
+
+        'changelog' => [
+            '_' => 'changelog',
+            'index' => 'listing',
+        ],
+
+        'community' => [
+            '_' => 'community',
+            'comments' => 'comments',
+            'contests' => 'contests',
+            'forum' => 'forum',
+            'livestream' => 'live streams',
+        ],
+
+        'error' => [
+            '_' => 'error',
+        ],
+
+        'help' => [
+            '_' => 'wiki',
+            'index' => 'index',
+        ],
+
+        'home' => [
+            '_' => 'home',
+            'password_reset' => 'reset password',
+        ],
+
+        'matches' => [
+            '_' => 'match history',
+        ],
+
+        'notice' => [
+            '_' => 'notice',
+        ],
+
+        'notifications' => [
+            '_' => 'notifications',
+            'index' => 'history',
+        ],
+
+        'rankings' => [
+            '_' => 'ranking',
+        ],
+
+        'store' => [
+            '_' => 'osu!store',
+            'cart' => 'cart',
+            'order' => 'invoice',
+            'orders' => 'order history',
+            'product' => 'product',
+            'products' => 'products',
+        ],
+
+        'tournaments' => [
+            '_' => 'tournaments',
+            'index' => 'listing',
+        ],
+
+        'users' => [
+            '_' => 'player',
+            'forum_posts' => 'forum posts',
+            'modding' => 'modding',
+            'show' => 'info',
+        ],
+    ],
+
+    'gallery' => [
+        'close' => 'Close (Esc)',
+        'fullscreen' => 'Toggle fullscreen',
+        'zoom' => 'Zoom in/out',
+        'previous' => 'Previous (arrow left)',
+        'next' => 'Next (arrow right)',
+    ],
+
     'menu' => [
         'home' => [
             '_' => 'home',
-            'account-edit' => 'settings',
-            'getChangelog' => 'changelog',
+            'account-edit' => 'account settings',
+            'account-verifyLink' => 'Verification Completed',
+            'beatmapset-watches-index' => 'modding watchlist',
+            'changelog-build' => 'build',
+            'changelog-index' => 'changelog',
+            'client_verifications-create' => 'osu! client verification',
+            'forum-topic-watches-index' => 'forum subscriptions',
+            'friends-index' => 'friends',
             'getDownload' => 'download',
             'getIcons' => 'icons',
-            'index' => 'osu!',
+            'groups-show' => 'groups',
+            'index' => 'dashboard',
             'legal-show' => 'information',
+            'messages-index' => 'messages',
             'news-index' => 'news',
             'news-show' => 'news',
             'password-reset-index' => 'reset password',
-            'search' => 'Search',
+            'search' => 'search',
             'supportTheGame' => 'support the game',
+            'team' => 'team',
+            'testflight' => 'testflight',
+        ],
+        'profile' => [
+            '_' => 'profile',
+            'friends' => 'friends',
+            'settings' => 'settings',
         ],
         'help' => [
             '_' => 'help',
             'getFaq' => 'faq',
-            'getSupport' => 'support',
+            'getRules' => 'rules',
+            'getSupport' => 'no, really, i need help!',
             'getWiki' => 'wiki',
             'wiki-show' => 'wiki',
         ],
         'beatmaps' => [
             '_' => 'beatmaps',
-            'show' => 'info',
-            'index' => 'listing',
             'artists' => 'featured artists',
-            // 'getPacks' => 'packs',
-            // 'getCharts' => 'charts',
+            'beatmap_discussion_posts-index' => 'beatmap discussion posts',
+            'beatmap_discussions-index' => 'beatmap discussions',
+            'beatmapset_discussion_votes-index' => 'beatmap discussion votes',
+            'beatmapset_events-index' => 'beatmapset events',
+            'index' => 'listing',
+            'packs' => 'packs',
+            'show' => 'info',
         ],
         'beatmapsets' => [
             '_' => 'beatmaps',
@@ -61,31 +178,32 @@ return [
             '_' => 'rankings',
             'index' => 'performance',
             'performance' => 'performance',
-            'charts' => 'charts',
+            'charts' => 'spotlights',
             'score' => 'score',
             'country' => 'country',
             'kudosu' => 'kudosu',
         ],
         'community' => [
             '_' => 'community',
-            'dev' => 'osu!dev',
-            'getForum' => 'forum',
-            'getChat' => 'chat',
-            'getSupport' => 'support',
+            'chat' => 'chat',
+            'chat-index' => 'chat',
+            'dev' => 'development',
+            'getForum' => 'forums',
             'getLive' => 'live',
+            'comments-index' => 'comments',
+            'comments-show' => 'comment',
             'contests' => 'contests',
             'profile' => 'profile',
             'tournaments' => 'tournaments',
             'tournaments-index' => 'tournaments',
             'tournaments-show' => 'tournament info',
-            'forum-topic-watches-index' => 'subscriptions',
-            'forum-topics-create' => 'forum',
-            'forum-topics-show' => 'forum',
-            'forum-forums-index' => 'forum',
-            'forum-forums-show' => 'forum',
+            'forum-topics-create' => 'forums',
+            'forum-topics-show' => 'forums',
+            'forum-forums-index' => 'forums',
+            'forum-forums-show' => 'forums',
         ],
         'multiplayer' => [
-            '_' => 'multiplayer',
+            '_' => 'multi',
             'show' => 'match',
         ],
         'error' => [
@@ -99,26 +217,37 @@ return [
         ],
         'user' => [
             '_' => 'user',
-            'getLogin' => 'login',
+            'getLogin' => 'sign in',
             'disabled' => 'disabled',
 
             'register' => 'register',
             'reset' => 'recover',
             'new' => 'new',
 
-            'messages' => 'Messages',
-            'settings' => 'Settings',
-            'logout' => 'Log Out',
             'help' => 'Help',
+            'logout' => 'Sign Out',
+            'messages' => 'Messages',
+            'modding-history-discussions' => 'user modding discussions',
+            'modding-history-events' => 'user modding events',
+            'modding-history-index' => 'user modding history',
+            'modding-history-posts' => 'user modding posts',
+            'modding-history-votesGiven' => 'user modding votes given',
+            'modding-history-votesReceived' => 'user modding votes received',
+            'notifications-index' => 'notifications history',
+            'oauth_login' => 'sign in for oauth',
+            'oauth_request' => 'oauth authorisation',
+            'settings' => 'Settings',
         ],
         'store' => [
             '_' => 'store',
+            'checkout-show' => 'checkout',
             'getListing' => 'listing',
-            'getCart' => 'cart',
+            'cart-show' => 'cart',
 
             'getCheckout' => 'checkout',
             'getInvoice' => 'invoice',
-            'getProduct' => 'product',
+            'orders-index' => 'order history',
+            'products-show' => 'product',
 
             'new' => 'new',
             'home' => 'home',
@@ -136,11 +265,12 @@ return [
         ],
         'admin' => [
             '_' => 'admin',
-            'root' => 'index',
+            'beatmapsets-covers' => 'beatmapset covers',
             'logs-index' => 'log',
+            'root' => 'index',
+
             'beatmapsets' => [
                 '_' => 'beatmapsets',
-                'covers' => 'covers',
                 'show' => 'detail',
             ],
         ],
@@ -150,29 +280,25 @@ return [
         'general' => [
             '_' => 'General',
             'home' => 'Home',
-            'changelog' => 'Changelog',
-            'beatmaps' => 'Beatmap Listings',
+            'changelog-index' => 'Changelog',
+            'beatmaps' => 'Beatmap Listing',
             'download' => 'Download osu!',
             'wiki' => 'Wiki',
         ],
         'help' => [
             '_' => 'Help & Community',
             'faq' => 'Frequently Asked Questions',
-            'forum' => 'CommunityForums',
+            'forum' => 'Community Forums',
             'livestreams' => 'Live Streams',
             'report' => 'Report an Issue',
-        ],
-        'support' => [
-            '_' => 'Support osu!',
-            'tags' => 'Supporter Tags',
-            'merchandise' => 'Merchandise',
         ],
         'legal' => [
             '_' => 'Legal & Status',
             'copyright' => 'Copyright (DMCA)',
-            'osu_status' => '@osustatus',
+            'privacy' => 'Privacy',
             'server_status' => 'Server Status',
-            'terms' => 'Terms of Service',
+            'source_code' => 'Source Code',
+            'terms' => 'Terms',
         ],
     ],
 
@@ -180,32 +306,26 @@ return [
         '404' => [
             'error' => 'Page Missing',
             'description' => "Sorry, but the page you requested isn't here!",
-            'link' => false,
         ],
         '403' => [
             'error' => "You shouldn't be here.",
             'description' => 'You could try going back, though.',
-            'link' => false,
         ],
         '401' => [
             'error' => "You shouldn't be here.",
-            'description' => 'You could try going back, though. Or maybe logging in.',
-            'link' => false,
+            'description' => 'You could try going back, though. Or maybe signing in.',
         ],
         '405' => [
             'error' => 'Page Missing',
             'description' => "Sorry, but the page you requested isn't here!",
-            'link' => false,
         ],
         '500' => [
             'error' => 'Oh no! Something broke! ;_;',
             'description' => "We're automatically notified of every error.",
-            'link' => false,
         ],
         'fatal' => [
             'error' => 'Oh no! Something broke (badly)! ;_;',
             'description' => "We're automatically notified of every error.",
-            'link' => false,
         ],
         '503' => [
             'error' => 'Down for maintenance!',
@@ -221,10 +341,10 @@ return [
 
     'popup_login' => [
         'login' => [
-            'email' => 'email address',
             'forgot' => "I've forgotten my details",
             'password' => 'password',
             'title' => 'Sign In To Proceed',
+            'username' => 'username',
 
             'error' => [
                 'email' => "Username or email address doesn't exist",
@@ -233,7 +353,8 @@ return [
         ],
 
         'register' => [
-            'info' => "You need an account, sir. Why don't you have one already?",
+            'download' => 'Download',
+            'info' => 'Download osu! to create your own account!',
             'title' => "Don't have an account?",
         ],
     ],
@@ -241,7 +362,8 @@ return [
     'popup_user' => [
         'links' => [
             'account-edit' => 'Settings',
-            'logout' => 'Log Out',
+            'friends' => 'Friends',
+            'logout' => 'Sign Out',
             'profile' => 'My Profile',
         ],
     ],

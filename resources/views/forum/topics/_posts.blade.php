@@ -1,5 +1,5 @@
 {{--
-    Copyright 2015-2017 ppy Pty. Ltd.
+    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 
     This file is part of osu!web. osu!web is distributed with the hope of
     attracting more community contributions to the core ecosystem of osu!.
@@ -21,26 +21,29 @@
 
 @foreach($posts as $post)
     @php
-        $withDeleteLink = Auth::check()
-            ? $post->poster_id === Auth::user()->user_id
-            : false;
+        $withDeleteLink = priv_check('ForumPostDelete', $post)->can();
 
-        if (!$withDeleteLink) {
-            $withDeleteLink = priv_check('ForumPostDelete', $post)->can();
-        }
-
-        if ($post->trashed() && $postPosition > 0) {
+        if ($post->trashed() && $postPosition > 0 && !$loop->first) {
             $postPosition--;
         }
+
+        // sync with:
+        // - Post#isBeatmapsetPost (position check)
+        // - Post#edit (option below)
+        // - Post#delete (option below)
+        $isBeatmapsetPost = $postPosition === 1 && $post->isBeatmapsetPost();
     @endphp
     @include('forum.topics._post', [
         'post' => $post,
         'options' => [
-            'deleteLink' => $withDeleteLink,
-            'editLink' => priv_check('ForumPostEdit', $post)->can(),
             'postPosition' => $postPosition,
-            'replyLink' => priv_check('ForumTopicReply', $topic)->can(),
             'signature' => $topic->forum->enable_sigs,
+
+            'buttons' => [
+                'delete' => !$isBeatmapsetPost && $withDeleteLink,
+                'edit' => !$isBeatmapsetPost && priv_check('ForumPostEdit', $post)->can(),
+                'quote' => priv_check('ForumTopicReply', $topic)->can(),
+            ],
         ],
     ])
     @php

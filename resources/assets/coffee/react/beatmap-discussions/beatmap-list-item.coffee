@@ -1,5 +1,5 @@
 ###
-#    Copyright 2015-2017 ppy Pty. Ltd.
+#    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 #
 #    This file is part of osu!web. osu!web is distributed with the hope of
 #    attracting more community contributions to the core ecosystem of osu!.
@@ -16,36 +16,39 @@
 #    along with osu!web.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
-{div} = React.DOM
+import { BeatmapIcon } from 'beatmap-icon'
+import * as React from 'react'
+import { div, i } from 'react-dom-factories'
 el = React.createElement
 
 bn = 'beatmap-list-item'
 
-BeatmapDiscussions.BeatmapListItem = React.createClass
-  mixins: [React.addons.PureRenderMixin]
+export BeatmapListItem = (props) ->
+  topClasses = bn
+  topClasses += " #{bn}--large" if props.large
 
+  version = props.beatmap.version
 
-  render: ->
-    topClasses = bn
-    topClasses += " #{bn}--large" if @props.large
+  if props.beatmap.deleted_at?
+    topClasses += " #{bn}--deleted"
+    version += " [#{osu.trans 'beatmap_discussions.index.deleted_beatmap'}]"
 
-    version = if @props.beatmap.mode == 'mania'
-      "[#{@props.beatmap.difficulty_size}k] #{@props.beatmap.version}"
-    else
-      @props.beatmap.version
+  div
+    className: topClasses
 
-    div
-      className: topClasses
+    div className: "#{bn}__col",
+      el BeatmapIcon,
+        beatmap: props.beatmap
+        modifier: "#{'large' if props.large}"
 
+    div className: "#{bn}__col #{bn}__col--main",
+      div className: 'u-ellipsis-overflow',
+        version
+
+    if props.withButton?
       div className: "#{bn}__col",
-        el BeatmapIcon,
-          beatmap: @props.beatmap
-          modifier: "#{'large' if @props.large}"
+        i className: "fas fa-chevron-#{props.withButton}"
 
-      div className: "#{bn}__col #{bn}__col--main",
-        div className: 'u-ellipsis-overflow',
-          version
-
-      if @props.withButton?
-        div className: "#{bn}__col",
-          el Icon, name: "chevron-#{@props.withButton}"
+    if props.count?
+      div className: "#{bn}__col",
+        div className: "#{bn}__counter", props.count

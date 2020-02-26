@@ -1,5 +1,5 @@
 ###
-#    Copyright 2015-2017 ppy Pty. Ltd.
+#    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
 #
 #    This file is part of osu!web. osu!web is distributed with the hope of
 #    attracting more community contributions to the core ecosystem of osu!.
@@ -35,18 +35,24 @@ class @StoreSupporterTag
     @discountElement = @el.querySelector('.js-discount')
     @slider = @el.querySelector('.js-slider')
     @sliderPresets = @el.querySelectorAll('.js-slider-preset')
+    @targetIdElement = @el.querySelector('input[name="item[extra_data][target_id]"]')
     @usernameInput = @el.querySelector('.js-username-input')
-    @inputFeedback = @el.querySelector('.js-input-feedback')
 
-    @user =
-      userId: @el.dataset.userId
-      username: @el.dataset.username
-      avatarUrl: @el.dataset.avatarUrl
+    @reactElement = @el.querySelector('.js-react--user-card-store')
+    @user = JSON.parse(@reactElement.dataset.user)
+
+    $(document).on 'turbolinks:before-cache.store-supporter-tag', =>
+      @reactElement.dataset.user = JSON.stringify(@user)
+      $(document).off '.store-supporter-tag'
 
     @cost = @calculate(@initializeSlider().slider('value'))
     @initializeSliderPresets()
     @initializeUsernameInput()
     @updateCostDisplay()
+
+    # force initial values for consistency.
+    @updateSearchResult()
+
 
   initializeSlider: =>
     # remove leftover from previous initialization
@@ -62,26 +68,35 @@ class @StoreSupporterTag
       slide: @onSliderValueChanged
       change: @onSliderValueChanged
 
+
   initializeSliderPresets: =>
     $(@sliderPresets).on 'click', (event) =>
       target = event.currentTarget
       price = StoreSupporterTagPrice.durationToPrice(target.dataset.months)
       $(@slider).slider('value', @sliderValue(price)) if price
 
+
   initializeUsernameInput: =>
     $(@usernameInput).on 'input', @onInput
 
-  getUser: (username) =>
-    $.post laroute.route('users.check-username-exists'), username: username
-    .done (data) =>
-      # make a User DTO?
-      @user =
-        userId: data.user_id
-        username: data.username
-        avatarUrl: data.avatar_url
 
-    .fail (xhr) =>
-      @user = null
+  getUser: (username) =>
+    if !username # reset to current user on empty
+      @user = window.currentUser
+      @searching = false
+      @updateSearchResult()
+      return
+
+    $.ajax
+      data:
+        username: username
+      dataType: 'json',
+      type: 'POST'
+      url: laroute.route('users.check-username-exists')
+    .done (data) =>
+      @user = data
+
+    .fail (xhr) ->
       if xhr.status == 401
         osu.popup osu.trans('errors.logged_out'), 'danger'
 
@@ -89,46 +104,28 @@ class @StoreSupporterTag
       @searching = false
       @updateSearchResult()
 
+
   calculate: (position) =>
     new StoreSupporterTagPrice(Math.floor(position / @RESOLUTION))
+
 
   onSliderValueChanged: (event, ui) =>
     @slider.dataset.lastValue = ui.value
     @cost = @calculate(ui.value)
     @updateCostDisplay()
 
+
   onInput: (event) =>
     if !@searching
       @searching = true
+      @user = null
       @updateSearchResult()
     @debouncedGetUser(event.currentTarget.value)
 
-  setUserInteraction: (enabled) =>
-    StoreCart.setEnabled(enabled)
-    # TODO: need to elevate this element when switching over to new store design.
-    $(@el).toggleClass('js-store--disabled', !enabled)
-    $('.js-slider').slider('disabled': !enabled)
 
   sliderValue: (price) ->
     price * @RESOLUTION
 
-  updateSearchResult: =>
-    if @searching
-      @inputFeedback.textContent = Lang.get('supporter_tag.user_search.searching')
-      return @setUserInteraction(false)
-
-    [avatarUrl, text] = if @user
-                          [@user.avatarUrl, '']
-                        else
-                          ['', Lang.get("supporter_tag.user_search.not_found")]
-
-    @inputFeedback.textContent = text
-    # Avoid setting value to undefined
-    @el.querySelector('input[name="item[extra_data][target_id]"]').value = @user?.userId ? null
-    $(@el.querySelectorAll('.js-avatar')).css
-      'background-image': "url(#{avatarUrl})"
-
-    @setUserInteraction(@user?)
 
   updateCostDisplay: =>
     @el.querySelector('input[name="item[cost]"]').value = @cost.price()
@@ -137,5 +134,25 @@ class @StoreSupporterTag
     @discountElement.textContent = @cost.discountText()
     @updateSliderPreset(elem, @cost) for elem in @sliderPresets
 
+
+  updateSearchResult: =>
+    $.publish 'store-supporter-tag:update-user', @user
+    @updateTargetId()
+    @updateUserInteraction()
+
+
   updateSliderPreset: (elem, cost) ->
     $(elem).toggleClass('js-slider-preset--active', cost.duration() >= +elem.dataset.months)
+
+
+  updateTargetId: =>
+    @targetIdElement.value = @user?.id
+
+
+  updateUserInteraction: =>
+    enabled = @user?.id? && Number.isFinite(@user.id) && @user.id > 0
+
+    StoreCart.setEnabled(enabled)
+    # TODO: need to elevate this element when switching over to new store design.
+    $(@el).toggleClass('js-store--disabled', !enabled)
+    $('.js-slider').slider('disabled': !enabled)

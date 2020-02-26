@@ -1,7 +1,7 @@
 <?php
 
 /**
- *    Copyright 2015-2017 ppy Pty. Ltd.
+ *    Copyright (c) ppy Pty Ltd <contact@ppy.sh>.
  *
  *    This file is part of osu!web. osu!web is distributed with the hope of
  *    attracting more community contributions to the core ecosystem of osu!.
@@ -19,9 +19,16 @@
  */
 
 return [
-
     'beatmapsets' => [
+        'covers' => [
+            'regenerate' => 'Rigenera',
+            'regenerating' => 'Rigenerando...',
+            'remove' => 'Rimuovi',
+            'removing' => 'Rimuovendo...',
+            'title' => '',
+        ],
         'show' => [
+            'covers' => '',
             'discussion' => [
                 '_' => 'Modding v2',
                 'activate' => 'attivare',
@@ -64,9 +71,8 @@ return [
 
     'pages' => [
         'root' => [
-            'title' => 'Console degli Amministratori',
-
             'sections' => [
+                'beatmapsets' => '',
                 'forum' => 'Forum',
                 'general' => 'Generale',
                 'store' => 'Negozio',
@@ -79,6 +85,13 @@ return [
             'index' => [
                 'title' => 'Elenco degli Ordini',
             ],
+        ],
+    ],
+
+    'users' => [
+        'restricted_banner' => [
+            'title' => 'Questo utente è attualmente ristretto.',
+            'message' => '(solo gli amministratori possono vedere questo)',
         ],
     ],
 
